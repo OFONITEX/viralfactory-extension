@@ -303,7 +303,7 @@ async function detectTikTokPage() {
   const videoCard = document.getElementById('videoCard');
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
     const isTikTok = tab?.url?.includes('tiktok.com/');
     const isVideoPage = /tiktok\.com\/@[^/]+\/video\/\d+/.test(tab?.url || '');
 
@@ -391,7 +391,7 @@ async function startScraping() {
   }
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
 
     // Inject content script if not already injected
     await chrome.scripting.executeScript({
