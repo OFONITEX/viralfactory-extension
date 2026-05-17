@@ -176,7 +176,7 @@ async function loadSession() {
       
       // Restore lyrics UI
       if (state.lyrics) {
-        document.getElementById('lyricsBox').textContent = state.lyrics;
+        document.getElementById('lyricsBox').value = state.lyrics;
         document.getElementById('lyricsResult').classList.remove('hidden');
       }
       
@@ -276,7 +276,7 @@ async function resetSession() {
     document.getElementById('videoCreator').textContent = '@creator';
     document.getElementById('scrapeBtn').disabled = true;
     document.getElementById('lyricsResult').classList.add('hidden');
-    document.getElementById('lyricsBox').textContent = '';
+    document.getElementById('lyricsBox').value = '';
     
     const audioEl = document.getElementById('audioPlayer');
     if (audioEl) {
@@ -436,7 +436,7 @@ async function startScraping() {
   
   // Reset UI components
   document.getElementById('lyricsResult').classList.add('hidden');
-  document.getElementById('lyricsBox').textContent = '';
+  document.getElementById('lyricsBox').value = '';
   const audioEl = document.getElementById('audioPlayer');
   if (audioEl) {
     audioEl.src = '';
@@ -603,7 +603,7 @@ async function composeLyrics() {
   const systemPrompt = `You are a comedy songwriter. You write funny, catchy songs based on TikTok comments. 
 Your songs are witty, relatable, and designed to go viral. Always write in the requested genre.
 ${clean ? 'Keep lyrics clean and safe for work.' : 'Light profanity is fine if funny.'}
-Return ONLY the song lyrics, no explanations. Include [Verse 1], [Chorus], [Verse 2], [Bridge] labels.`;
+Return ONLY the song lyrics, no explanations. You MUST write at least 2 verses and a chorus. Include [Verse 1], [Chorus], [Verse 2], and optionally [Bridge] or [Outro] labels.`;
 
   const userPrompt = `Write a ${state.selectedGenre} song based on these TikTok comments.
 
@@ -614,6 +614,12 @@ ${topComments}
 
 ${nameDrop ? 'Name-drop the commenters (their @usernames) in the lyrics for virality.' : ''}
 ${extra ? `Extra notes: ${extra}` : ''}
+
+You MUST write a complete song structure containing at least:
+1. [Verse 1]
+2. [Chorus]
+3. [Verse 2]
+4. [Chorus]
 
 Make it funny, punchy, and perfect for a 60-second video. Give it a memorable chorus.`;
 
@@ -647,7 +653,7 @@ Make it funny, punchy, and perfect for a 60-second video. Give it a memorable ch
     }
 
     state.lyrics = res.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    document.getElementById('lyricsBox').textContent = state.lyrics;
+    document.getElementById('lyricsBox').value = state.lyrics;
     result.classList.remove('hidden');
     saveSession();
 
@@ -656,7 +662,7 @@ Make it funny, punchy, and perfect for a 60-second video. Give it a memorable ch
     composeBtn.disabled = false;
     // Fallback demo lyrics
     state.lyrics = getMockLyrics(state.selectedGenre);
-    document.getElementById('lyricsBox').textContent = state.lyrics;
+    document.getElementById('lyricsBox').value = state.lyrics;
     result.classList.remove('hidden');
     saveSession();
   }
@@ -714,6 +720,14 @@ async function generateMusic() {
   if (!customMode && !directPrompt) {
     alert('Please enter a description for the song!');
     return;
+  }
+
+  if (customMode) {
+    const edited = document.getElementById('lyricsBox')?.value;
+    if (edited) {
+      state.lyrics = edited;
+      saveSession();
+    }
   }
 
   const prompt = customMode ? (state.lyrics || 'ViralFactory prompt') : directPrompt;

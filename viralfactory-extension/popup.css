@@ -647,7 +647,7 @@ body {
   line-height: 1.65;
   color: #c4b0f0;
   font-style: italic;
-  max-height: 160px;
+  max-height: 250px;
   overflow-y: auto;
   white-space: pre-wrap;
   scrollbar-width: thin;

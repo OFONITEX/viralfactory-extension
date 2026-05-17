@@ -130,15 +130,16 @@ async function startSunoGeneration({ prompt, genre, customMode, instrumental, mo
   }
 
   const data = await res.json();
-  if (data.code !== 200) {
+  const code = data ? Number(data.code) : 0;
+  if (code !== 200) {
     // Handle inline prompt validation issues
-    if (data.code === 400 || data.code === 413) {
-      throw new Error(`Prompt Issue (${data.code}): ${data.msg}`);
+    if (code === 400 || code === 413) {
+      throw new Error(`Prompt Issue (${code}): ${data.msg}`);
     }
     throw new Error(data.msg || 'Suno API rejected the task');
   }
 
-  const taskId = data.data.taskId;
+  const taskId = data?.data?.taskId;
   if (!taskId) {
     throw new Error('Response did not contain a valid taskId');
   }
@@ -202,12 +203,13 @@ async function handleSunoPoll() {
     }
 
     const data = await res.json();
-    if (data.code !== 200) {
-      throw new Error(data.msg || 'Suno API error');
+    const code = data ? Number(data.code) : 0;
+    if (code !== 200) {
+      throw new Error(data?.msg || 'Suno API error');
     }
 
-    const status = data.data.status;
-    const records = data.data.sunoData;
+    const status = (data?.data?.status || '').toUpperCase();
+    const records = data?.data?.sunoData || [];
 
     if (status === 'SUCCESS' || status === 'FIRST_SUCCESS') {
       // Generation succeeded!
@@ -242,14 +244,16 @@ async function handleSunoPoll() {
       showNotification('Music Generation Failed', errMsg);
     }
   } catch (err) {
+    chrome.alarms.clear('pollSuno');
+    await chrome.storage.local.remove('vf_suno_poll_state');
+    chrome.runtime.sendMessage({
+      type: 'SUNO_GENERATION_ERROR',
+      error: err.message
+    });
     if (err.message.includes('Unauthorized')) {
-      chrome.alarms.clear('pollSuno');
-      await chrome.storage.local.remove('vf_suno_poll_state');
-      chrome.runtime.sendMessage({
-        type: 'SUNO_GENERATION_ERROR',
-        error: err.message
-      });
       showNotification('Suno Key Invalid', 'Please check your Suno API Key in the Settings.');
+    } else {
+      showNotification('Suno Generation Error', err.message);
     }
   }
 }
