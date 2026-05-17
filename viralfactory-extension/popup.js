@@ -890,8 +890,9 @@ function setupPublishButtons() {
 
 async function publishTo(platform) {
   const keys = await getKeys();
-  const statusEl = document.getElementById(`${platform.slice(0, 2)}Status`);
-  const btnEl = document.getElementById(`${platform.slice(0, 2)}PublishBtn`);
+  const prefix = platform === 'tiktok' ? 'tt' : platform === 'youtube' ? 'yt' : 'fb';
+  const statusEl = document.getElementById(`${prefix}Status`);
+  const btnEl = document.getElementById(`${prefix}PublishBtn`);
   const caption = document.getElementById('captionText').value;
 
   btnEl.disabled = true;
