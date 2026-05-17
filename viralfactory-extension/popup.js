@@ -12,6 +12,7 @@ const state = {
   lyrics: '',
   audioBlob: null,
   audioUrl: null,
+  videoUrl: null,
   videoBlob: null,
   caption: '',
 };
@@ -117,6 +118,7 @@ function saveSession() {
     selectedGenre: state.selectedGenre,
     lyrics: state.lyrics,
     audioUrl: state.audioUrl,
+    videoUrl: state.videoUrl,
     caption: state.caption,
     extraPrompt: document.getElementById('extraPrompt')?.value || '',
     nameDropToggle: document.getElementById('nameDropToggle')?.checked,
@@ -140,6 +142,7 @@ async function loadSession() {
       state.selectedGenre = vf_session.selectedGenre || 'pop-punk';
       state.lyrics = vf_session.lyrics || '';
       state.audioUrl = vf_session.audioUrl || null;
+      state.videoUrl = vf_session.videoUrl || null;
       state.caption = vf_session.caption || '';
       
       // Restore UI elements
@@ -200,9 +203,25 @@ async function loadSession() {
           genBtn.textContent = 'Music Generated';
         }
       }
-      
-      // Draw canvas if we have lyrics and are on page 3 or later
-      if (state.lyrics && state.currentPage >= 3) {
+      // Restore video UI
+      if (state.videoUrl) {
+        const videoPlayer = document.getElementById('sunoVideoPlayer');
+        const canvas = document.getElementById('videoCanvas');
+        const overlay = document.getElementById('canvasOverlay');
+        if (videoPlayer) {
+          videoPlayer.src = state.videoUrl;
+          videoPlayer.classList.remove('hidden');
+        }
+        if (canvas) canvas.classList.add('hidden');
+        if (overlay) overlay.style.display = 'none';
+        
+        // Background pre-fetch blob if needed
+        fetch(state.videoUrl)
+          .then(res => res.blob())
+          .then(blob => { state.videoBlob = blob; })
+          .catch(() => {});
+      } else if (state.lyrics && state.currentPage >= 3) {
+        // Draw canvas if we have lyrics and are on page 3 or later
         setTimeout(() => drawVideoPreview(), 100);
       }
       
@@ -411,6 +430,8 @@ async function startScraping() {
   // Clear any existing session elements for a fresh scrape
   state.lyrics = '';
   state.audioUrl = null;
+  state.videoUrl = null;
+  state.videoBlob = null;
   state.caption = '';
   
   // Reset UI components
@@ -420,6 +441,19 @@ async function startScraping() {
   if (audioEl) {
     audioEl.src = '';
     audioEl.classList.add('hidden');
+  }
+  const videoPlayer = document.getElementById('sunoVideoPlayer');
+  if (videoPlayer) {
+    videoPlayer.src = '';
+    videoPlayer.classList.add('hidden');
+  }
+  const canvas = document.getElementById('videoCanvas');
+  if (canvas) {
+    canvas.classList.remove('hidden');
+  }
+  const overlay = document.getElementById('canvasOverlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
   }
   const pill = document.getElementById('musicPill');
   if (pill) {
@@ -640,8 +674,19 @@ function setupFormatPicker() {
 
   document.getElementById('genMusicBtn').onclick = generateMusic;
   document.getElementById('renderVideoBtn').onclick = () => {
-    drawVideoPreview(true);
     document.getElementById('canvasOverlay').style.display = 'none';
+    if (state.videoUrl) {
+      const videoPlayer = document.getElementById('sunoVideoPlayer');
+      const canvas = document.getElementById('videoCanvas');
+      if (canvas) canvas.classList.add('hidden');
+      if (videoPlayer) {
+        videoPlayer.src = state.videoUrl;
+        videoPlayer.classList.remove('hidden');
+        videoPlayer.play();
+      }
+    } else {
+      drawVideoPreview(true);
+    }
   };
 }
 
@@ -721,9 +766,33 @@ function handleSunoComplete(songs) {
   const genBtn = document.getElementById('genMusicBtn');
   const cancelBtn = document.getElementById('cancelMusicBtn');
   const audioEl = document.getElementById('audioPlayer');
+  const videoPlayer = document.getElementById('sunoVideoPlayer');
+  const canvas = document.getElementById('videoCanvas');
+  const overlay = document.getElementById('canvasOverlay');
 
   if (songs && songs.length > 0) {
     state.audioUrl = songs[0].audioUrl;
+    
+    if (songs[0].videoUrl) {
+      state.videoUrl = songs[0].videoUrl;
+      
+      // Update UI to load the video
+      if (videoPlayer) {
+        videoPlayer.src = state.videoUrl;
+        videoPlayer.classList.remove('hidden');
+      }
+      if (canvas) canvas.classList.add('hidden');
+      if (overlay) overlay.style.display = 'none';
+
+      // Background pre-fetch the video as a Blob for uploading
+      fetch(state.videoUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          state.videoBlob = blob;
+          console.log('Video Blob loaded successfully:', blob.size, 'bytes');
+        })
+        .catch(err => console.error('Failed to pre-fetch video Blob:', err));
+    }
     
     if (pill) {
       pill.className = 'status-pill done';
