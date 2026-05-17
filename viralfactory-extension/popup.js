@@ -612,16 +612,17 @@ Context: ${videoContext}
 Top comments:
 ${topComments}
 
-${nameDrop ? 'Name-drop the commenters (their @usernames) in the lyrics for virality.' : ''}
+${nameDrop ? 'You must name-drop and weave as many of these unique commenters (up to 20 @usernames) as possible directly in the lyrics for maximum virality.' : 'Weave the context, themes, and hilarious observations from all of these comments into the lyrics.'}
 ${extra ? `Extra notes: ${extra}` : ''}
 
-You MUST write a complete song structure containing at least:
-1. [Verse 1]
-2. [Chorus]
-3. [Verse 2]
+You MUST write a complete, full-length song structure containing at least:
+1. [Verse 1] (Incorporating early comments)
+2. [Chorus] (Memorable, catchy, viral hooks)
+3. [Verse 2] (Weaving remaining comments)
 4. [Chorus]
+5. [Outro] (A funny closing line based on the comments)
 
-Make it funny, punchy, and perfect for a 60-second video. Give it a memorable chorus.`;
+Make sure to generate the complete lyrics without truncation or placeholders. Make it funny, punchy, and perfect for a 60-second video. Give it a memorable chorus.`;
 
   try {
     const res = await chrome.runtime.sendMessage({
@@ -1124,8 +1125,20 @@ function getMockComments() {
       { username: '@local_cryptid', text: 'this is the first thing that made me feel anything in 6 months', likes: 9870, avatar: null },
       { username: '@ratgirlsummer', text: 'the audacity. the nerve. the GOD-GIVEN BOLDNESS.', likes: 8760, avatar: null },
       { username: '@sleepybean42', text: 'i came here from someone who sent this saying "it will change your life" — they were RIGHT', likes: 7200, avatar: null },
+      { username: '@pixel_pioneer', text: 'my last two remaining brain cells trying to process this masterpiece 🧠', likes: 6500, avatar: null },
+      { username: '@dank_wizard', text: 'this is going straight into my absolute favorites playlist no questions asked', likes: 5900, avatar: null },
+      { username: '@keyboard_warrior_99', text: 'i did not expect to get hit with this level of emotional damage today 😭', likes: 5200, avatar: null },
+      { username: '@meme_archivist', text: 'this belongs in a history museum under modern classics', likes: 4900, avatar: null },
+      { username: '@caffeine_addict_pete', text: 'i spit my iced coffee all over my keyboard and i am not even mad', likes: 4600, avatar: null },
+      { username: '@shadow_lurker', text: 'bro is playing 4D chess while the rest of us are playing checkers ♟️', likes: 4100, avatar: null },
+      { username: '@disco_duck', text: 'this has no right to be as incredibly catchy as it is', likes: 3800, avatar: null },
+      { username: '@gaming_gandalf', text: 'i have watched this on repeat for the past two hours send help', likes: 3400, avatar: null },
+      { username: '@recipe_ruiner', text: 'my cooking got burnt because I was too distracted laughing at this', likes: 2900, avatar: null },
+      { username: '@unemployed_philosopher', text: 'if you think about it, this is a beautiful commentary on human nature', likes: 2500, avatar: null },
+      { username: '@lost_tourist', text: 'i don’t know how i ended up on this side of tiktok but i’m staying', likes: 2100, avatar: null },
+      { username: '@pajama_guru', text: 'this vibe is completely immaculate and unmatched 💫', likes: 1800, avatar: null }
     ],
-    total: 247,
+    total: 312,
     videoMeta: { title: 'wait for it 😭😭😭', creator: '@viral_creator', url: 'https://tiktok.com' }
   };
 }

@@ -154,10 +154,10 @@
 
     if (!panel) return;
 
-    // Scroll down 3 times to load more comments
-    for (let i = 0; i < 3; i++) {
-      panel.scrollTop += 800;
-      await sleep(600);
+    // Scroll down 6 times to load way more comments dynamically
+    for (let i = 0; i < 6; i++) {
+      panel.scrollTop += 1200;
+      await sleep(500);
     }
     panel.scrollTop = 0;
   }
