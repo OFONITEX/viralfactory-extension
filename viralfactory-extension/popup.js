@@ -39,6 +39,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadSession();
   setupSessionListeners();
   
+  // Handle iframe specific overrides
+  if (window.self !== window.top) {
+    document.body.classList.add('in-iframe');
+    
+    // Listen for events from the host container (e.g. open settings)
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'OPEN_SETTINGS') {
+        document.getElementById('settingsPanel').classList.remove('hidden');
+      }
+    });
+  }
+  
   await detectTikTokPage();
 });
 

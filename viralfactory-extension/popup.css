@@ -854,8 +854,33 @@ body {
 .success-icon { font-size: 22px; }
 .success-text { font-size: 13px; font-weight: 600; color: var(--green); }
 
-/* ─── SCROLLBARS ─────────────────────────────────────────── */
-
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 2px; }
+
+/* ─── IFRAME PANEL IN-PAGE OVERRIDES ─────────────────────── */
+body.in-iframe {
+  width: 100%;
+  min-height: auto;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+body.in-iframe::-webkit-scrollbar {
+  width: 6px;
+}
+
+body.in-iframe::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 3px;
+}
+
+body.in-iframe .header {
+  display: none !important;
+}
+
+body.in-iframe .settings-panel {
+  top: 0;
+  border-radius: 0;
+  height: 100%;
+}

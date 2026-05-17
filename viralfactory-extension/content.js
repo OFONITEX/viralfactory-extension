@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  // Listen for scrape requests from the popup
+  // Listen for scrape requests and panel toggles from the background/popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'SCRAPE_COMMENTS') {
       scrapeComments().then(sendResponse).catch(err =>
@@ -15,6 +15,10 @@
 
     if (message.type === 'GET_VIDEO_META') {
       sendResponse(getVideoMeta());
+    }
+
+    if (message.type === 'TOGGLE_WIDGET') {
+      toggleFloatingWidget();
     }
   });
 
@@ -165,6 +169,197 @@
 
   function sleep(ms) {
     return new Promise(r => setTimeout(r, ms));
+  }
+
+  function toggleFloatingWidget() {
+    let panel = document.getElementById('vf-floating-panel');
+    if (panel) {
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+      } else {
+        panel.style.display = 'none';
+      }
+      return;
+    }
+
+    // Create the container panel
+    panel = document.createElement('div');
+    panel.id = 'vf-floating-panel';
+    
+    // Style the container beautifully (sleek glassmorphic dark theme)
+    Object.assign(panel.style, {
+      position: 'fixed',
+      top: '80px',
+      right: '20px',
+      width: '380px',
+      height: '640px',
+      zIndex: '2147483647',
+      backgroundColor: '#121319', // Sleek rich dark
+      border: '1px solid rgba(255, 255, 255, 0.12)',
+      borderRadius: '16px',
+      boxShadow: '0 16px 48px rgba(0, 0, 0, 0.65)',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      transition: 'opacity 0.2s ease, transform 0.2s ease',
+      color: '#fff',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+    });
+
+    // Create the header handle bar for dragging
+    const header = document.createElement('div');
+    header.id = 'vf-floating-header';
+    Object.assign(header.style, {
+      padding: '12px 16px',
+      backgroundColor: '#0c0d12',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+      cursor: 'move',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      userSelect: 'none'
+    });
+
+    // Title and icon in header
+    const title = document.createElement('div');
+    title.innerHTML = '🎵 <span style="font-weight:700;background:linear-gradient(90deg, #FF3366, #00E5FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">ViralFactory</span>';
+    title.style.fontSize = '14px';
+    header.appendChild(title);
+
+    // Right buttons group
+    const rightGroup = document.createElement('div');
+    Object.assign(rightGroup.style, {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
+    });
+
+    // Settings button
+    const settingsBtn = document.createElement('button');
+    settingsBtn.textContent = '⚙️';
+    Object.assign(settingsBtn.style, {
+      background: 'none',
+      border: 'none',
+      color: 'rgba(255, 255, 255, 0.6)',
+      fontSize: '14px',
+      cursor: 'pointer',
+      padding: '4px',
+      transition: 'color 0.2s, transform 0.2s',
+      outline: 'none'
+    });
+    settingsBtn.onmouseover = () => {
+      settingsBtn.style.color = '#00E5FF';
+      settingsBtn.style.transform = 'rotate(45deg)';
+    };
+    settingsBtn.onmouseout = () => {
+      settingsBtn.style.color = 'rgba(255, 255, 255, 0.6)';
+      settingsBtn.style.transform = 'rotate(0deg)';
+    };
+    settingsBtn.onclick = () => {
+      iframe.contentWindow.postMessage({ type: 'OPEN_SETTINGS' }, '*');
+    };
+    rightGroup.appendChild(settingsBtn);
+
+    // Close button
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    Object.assign(closeBtn.style, {
+      background: 'none',
+      border: 'none',
+      color: 'rgba(255, 255, 255, 0.6)',
+      fontSize: '16px',
+      cursor: 'pointer',
+      padding: '4px 8px',
+      transition: 'color 0.2s',
+      outline: 'none'
+    });
+    closeBtn.onmouseover = () => closeBtn.style.color = '#FF3366';
+    closeBtn.onmouseout = () => closeBtn.style.color = 'rgba(255, 255, 255, 0.6)';
+    closeBtn.onclick = () => panel.style.display = 'none';
+    rightGroup.appendChild(closeBtn);
+
+    header.appendChild(rightGroup);
+    panel.appendChild(header);
+
+    // Create the iframe
+    const iframe = document.createElement('iframe');
+    iframe.src = chrome.runtime.getURL('popup.html');
+    Object.assign(iframe.style, {
+      border: 'none',
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'transparent'
+    });
+    panel.appendChild(iframe);
+
+    document.body.appendChild(panel);
+
+    // Position persistence
+    chrome.storage.local.get('vf_panel_pos', ({ vf_panel_pos }) => {
+      if (vf_panel_pos) {
+        panel.style.top = vf_panel_pos.top;
+        panel.style.left = vf_panel_pos.left;
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+      }
+    });
+
+    // Drag-and-drop implementation
+    let isDragging = false;
+    let startX, startY;
+    let initialLeft, initialTop;
+
+    header.addEventListener('mousedown', (e) => {
+      // Disable pointer events on the iframe so drag is super smooth
+      iframe.style.pointerEvents = 'none';
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      
+      const rect = panel.getBoundingClientRect();
+      initialLeft = rect.left;
+      initialTop = rect.top;
+      
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+      panel.style.left = `${initialLeft}px`;
+      panel.style.top = `${initialTop}px`;
+      
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      
+      let newLeft = initialLeft + dx;
+      let newTop = initialTop + dy;
+      
+      // Boundaries checks
+      newLeft = Math.max(0, Math.min(window.innerWidth - 380, newLeft));
+      newTop = Math.max(0, Math.min(window.innerHeight - 640, newTop));
+      
+      panel.style.left = `${newLeft}px`;
+      panel.style.top = `${newTop}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!isDragging) return;
+      iframe.style.pointerEvents = 'auto';
+      isDragging = false;
+      
+      // Save position to local storage
+      chrome.storage.local.set({
+        vf_panel_pos: {
+          top: panel.style.top,
+          left: panel.style.left,
+          right: 'auto',
+          bottom: 'auto'
+        }
+      });
+    });
   }
 
 })();

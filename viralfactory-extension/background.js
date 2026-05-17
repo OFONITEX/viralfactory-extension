@@ -33,25 +33,18 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('ViralFactory installed! 🎵');
 });
 
-// Standalone Draggable Window Management
-chrome.action.onClicked.addListener(() => {
-  const popupUrl = chrome.runtime.getURL("popup.html");
+// In-Page Floating Panel Trigger
+chrome.action.onClicked.addListener(async (tab) => {
+  if (!tab.url || !tab.url.includes('tiktok.com')) {
+    alert("Please navigate to TikTok to use ViralFactory!");
+    return;
+  }
   
-  chrome.tabs.query({ url: popupUrl }, (tabs) => {
-    if (tabs && tabs.length > 0) {
-      chrome.windows.update(tabs[0].windowId, { focused: true });
-    } else {
-      createWindow();
-    }
-  });
+  // Inject content script if not already injected
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    files: ['content.js']
+  }).catch(() => {});
+  
+  chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_WIDGET' });
 });
-
-function createWindow() {
-  chrome.windows.create({
-    url: chrome.runtime.getURL("popup.html"),
-    type: "popup",
-    width: 380,
-    height: 640,
-    focused: true
-  });
-}
