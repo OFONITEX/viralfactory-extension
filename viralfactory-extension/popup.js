@@ -34,8 +34,192 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupFormatPicker();
   setupNavButtons();
   setupPublishButtons();
+  
+  // Load persistent session and register change listeners
+  await loadSession();
+  setupSessionListeners();
+  
   await detectTikTokPage();
 });
+
+// ─── SESSION PERSISTENCE ───────────────────────────────────────────────────
+function saveSession() {
+  const session = {
+    currentPage: state.currentPage,
+    videoMeta: state.videoMeta,
+    comments: state.comments,
+    selectedGenre: state.selectedGenre,
+    lyrics: state.lyrics,
+    audioUrl: state.audioUrl,
+    caption: state.caption,
+    extraPrompt: document.getElementById('extraPrompt')?.value || '',
+    nameDropToggle: document.getElementById('nameDropToggle')?.checked,
+    cleanToggle: document.getElementById('cleanToggle')?.checked
+  };
+  chrome.storage.local.set({ vf_session: session });
+}
+
+async function loadSession() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get('vf_session', ({ vf_session }) => {
+      if (!vf_session) {
+        resolve(false);
+        return;
+      }
+      
+      // Restore state object
+      state.currentPage = vf_session.currentPage || 1;
+      state.videoMeta = vf_session.videoMeta || null;
+      state.comments = vf_session.comments || [];
+      state.selectedGenre = vf_session.selectedGenre || 'pop-punk';
+      state.lyrics = vf_session.lyrics || '';
+      state.audioUrl = vf_session.audioUrl || null;
+      state.caption = vf_session.caption || '';
+      
+      // Restore UI elements
+      if (document.getElementById('extraPrompt') && vf_session.extraPrompt) {
+        document.getElementById('extraPrompt').value = vf_session.extraPrompt;
+      }
+      if (document.getElementById('nameDropToggle') && vf_session.nameDropToggle !== undefined) {
+        document.getElementById('nameDropToggle').checked = vf_session.nameDropToggle;
+      }
+      if (document.getElementById('cleanToggle') && vf_session.cleanToggle !== undefined) {
+        document.getElementById('cleanToggle').checked = vf_session.cleanToggle;
+      }
+      if (document.getElementById('captionText') && state.caption) {
+        document.getElementById('captionText').value = state.caption;
+      }
+      
+      // Rebuild comments list
+      if (state.comments && state.comments.length > 0) {
+        renderCommentList(state.comments);
+        document.getElementById('commentCount').textContent = state.comments.length;
+        document.getElementById('commentPreview').classList.remove('hidden');
+      }
+      
+      // Restore videoMeta UI
+      if (state.videoMeta) {
+        document.getElementById('videoTitle').textContent = state.videoMeta.title || 'TikTok Video';
+        document.getElementById('videoCreator').textContent = state.videoMeta.creator ? `@${state.videoMeta.creator.replace('@', '')}` : '';
+        document.getElementById('videoCard').style.display = 'flex';
+        document.getElementById('scrapeBtn').disabled = false;
+      }
+      
+      // Restore lyrics UI
+      if (state.lyrics) {
+        document.getElementById('lyricsBox').textContent = state.lyrics;
+        document.getElementById('lyricsResult').classList.remove('hidden');
+      }
+      
+      // Restore active genre button
+      document.querySelectorAll('.genre-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.genre === state.selectedGenre);
+      });
+      
+      // Restore audio UI
+      if (state.audioUrl) {
+        const pill = document.getElementById('musicPill');
+        const audioEl = document.getElementById('audioPlayer');
+        const genBtn = document.getElementById('genMusicBtn');
+        if (pill) {
+          pill.className = 'status-pill done';
+          pill.textContent = 'Ready ✓';
+        }
+        if (audioEl) {
+          audioEl.src = state.audioUrl;
+          audioEl.classList.remove('hidden');
+        }
+        if (genBtn) {
+          genBtn.disabled = true;
+          genBtn.textContent = 'Music Generated';
+        }
+      }
+      
+      // Draw canvas if we have lyrics and are on page 3 or later
+      if (state.lyrics && state.currentPage >= 3) {
+        setTimeout(() => drawVideoPreview(), 100);
+      }
+      
+      // Update page index after elements are restored
+      showPage(state.currentPage);
+      
+      resolve(true);
+    });
+  });
+}
+
+function setupSessionListeners() {
+  const elements = ['extraPrompt', 'nameDropToggle', 'cleanToggle', 'captionText'];
+  elements.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const eventName = el.type === 'checkbox' ? 'change' : 'input';
+    el.addEventListener(eventName, () => {
+      if (id === 'captionText') {
+        state.caption = el.value;
+      }
+      saveSession();
+    });
+  });
+}
+
+async function resetSession() {
+  if (confirm('Are you sure you want to reset the current session and start fresh?')) {
+    await chrome.storage.local.remove('vf_session');
+    
+    // Reset state
+    state.currentPage = 1;
+    state.videoMeta = null;
+    state.comments = [];
+    state.selectedGenre = 'pop-punk';
+    state.lyrics = '';
+    state.audioUrl = null;
+    state.caption = '';
+    
+    // Reset UI inputs
+    if (document.getElementById('extraPrompt')) document.getElementById('extraPrompt').value = '';
+    if (document.getElementById('nameDropToggle')) document.getElementById('nameDropToggle').checked = true;
+    if (document.getElementById('cleanToggle')) document.getElementById('cleanToggle').checked = true;
+    if (document.getElementById('captionText')) document.getElementById('captionText').value = '';
+    
+    // Reset HTML components
+    document.getElementById('commentPreview').classList.add('hidden');
+    document.getElementById('commentList').innerHTML = '';
+    document.getElementById('commentCount').textContent = '0';
+    document.getElementById('videoCard').style.display = 'none';
+    document.getElementById('videoTitle').textContent = 'Loading...';
+    document.getElementById('videoCreator').textContent = '@creator';
+    document.getElementById('scrapeBtn').disabled = true;
+    document.getElementById('lyricsResult').classList.add('hidden');
+    document.getElementById('lyricsBox').textContent = '';
+    
+    const audioEl = document.getElementById('audioPlayer');
+    if (audioEl) {
+      audioEl.src = '';
+      audioEl.classList.add('hidden');
+    }
+    
+    const pill = document.getElementById('musicPill');
+    if (pill) {
+      pill.className = 'status-pill pending';
+      pill.textContent = 'Pending';
+    }
+    
+    const genBtn = document.getElementById('genMusicBtn');
+    if (genBtn) {
+      genBtn.disabled = false;
+      genBtn.textContent = 'Generate Music';
+    }
+    
+    document.querySelectorAll('.genre-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.genre === 'pop-punk');
+    });
+    
+    showPage(1);
+    document.getElementById('settingsPanel').classList.add('hidden');
+    await detectTikTokPage();
+  }
+}
 
 // ─── SETTINGS PANEL ────────────────────────────────────────────────────────
 function setupSettingsPanel() {
@@ -46,6 +230,7 @@ function setupSettingsPanel() {
     document.getElementById('settingsPanel').classList.add('hidden');
   };
   document.getElementById('saveSettings').onclick = saveKeys;
+  document.getElementById('resetSessionBtn').onclick = resetSession;
 }
 
 function saveKeys() {
@@ -91,6 +276,7 @@ function showPage(n) {
     s.classList.toggle('active', stepNum === n);
     s.classList.toggle('done', stepNum < n);
   });
+  saveSession();
 }
 
 function setupNavButtons() {
@@ -156,6 +342,30 @@ async function detectTikTokPage() {
 
 // ─── SCRAPING ──────────────────────────────────────────────────────────────
 async function startScraping() {
+  // Clear any existing session elements for a fresh scrape
+  state.lyrics = '';
+  state.audioUrl = null;
+  state.caption = '';
+  
+  // Reset UI components
+  document.getElementById('lyricsResult').classList.add('hidden');
+  document.getElementById('lyricsBox').textContent = '';
+  const audioEl = document.getElementById('audioPlayer');
+  if (audioEl) {
+    audioEl.src = '';
+    audioEl.classList.add('hidden');
+  }
+  const pill = document.getElementById('musicPill');
+  if (pill) {
+    pill.className = 'status-pill pending';
+    pill.textContent = 'Pending';
+  }
+  const genBtn = document.getElementById('genMusicBtn');
+  if (genBtn) {
+    genBtn.disabled = false;
+    genBtn.textContent = 'Generate Music';
+  }
+
   const btn = document.getElementById('scrapeBtn');
   const loading = document.getElementById('scrapeLoading');
   const fill = document.getElementById('scrapeFill');
@@ -205,6 +415,7 @@ async function startScraping() {
 
       document.getElementById('commentCount').textContent = state.comments.length;
       preview.classList.remove('hidden');
+      saveSession();
     });
   } catch (e) {
     // Fall back to mock data
@@ -215,6 +426,7 @@ async function startScraping() {
     loading.classList.add('hidden');
     btn.disabled = false;
     preview.classList.remove('hidden');
+    saveSession();
   }
 }
 
@@ -251,6 +463,7 @@ function setupGenrePicker() {
       document.querySelectorAll('.genre-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.selectedGenre = btn.dataset.genre;
+      saveSession();
     };
   });
 
@@ -336,6 +549,7 @@ Make it funny, punchy, and perfect for a 60-second video. Give it a memorable ch
     state.lyrics = res.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     document.getElementById('lyricsBox').textContent = state.lyrics;
     result.classList.remove('hidden');
+    saveSession();
 
   } catch (e) {
     loading.classList.add('hidden');
@@ -344,6 +558,7 @@ Make it funny, punchy, and perfect for a 60-second video. Give it a memorable ch
     state.lyrics = getMockLyrics(state.selectedGenre);
     document.getElementById('lyricsBox').textContent = state.lyrics;
     result.classList.remove('hidden');
+    saveSession();
   }
 }
 
@@ -432,6 +647,7 @@ async function pollSunoJob(jobId, key, pill, audioEl) {
       pill.textContent = 'Ready ✓';
       audioEl.src = track.audio_url;
       audioEl.classList.remove('hidden');
+      saveSession();
       return;
     }
   }
@@ -548,6 +764,12 @@ function generateCaption() {
   const genre = state.selectedGenre || 'pop-punk';
   const tags = '#ViralFactory #AIMusic #TikTok #Funny #FYP #MusicVideo';
   state.caption = `I turned ${creator}'s comment section into a ${genre} banger 🎵💀\n\nMade with ViralFactory — drop your fav TikTok link below 👇\n\n${tags}`;
+  
+  const el = document.getElementById('captionText');
+  if (el) {
+    el.value = state.caption;
+  }
+  saveSession();
 }
 
 // ─── PUBLISHING ────────────────────────────────────────────────────────────

@@ -32,3 +32,31 @@ async function handleFetch({ url, method = 'GET', headers = {}, body }) {
 chrome.runtime.onInstalled.addListener(() => {
   console.log('ViralFactory installed! 🎵');
 });
+
+// Standalone Draggable Window Management
+let extensionWindowId = null;
+
+chrome.action.onClicked.addListener(() => {
+  if (extensionWindowId !== null) {
+    chrome.windows.get(extensionWindowId, (win) => {
+      if (chrome.runtime.lastError || !win) {
+        createWindow();
+      } else {
+        chrome.windows.update(extensionWindowId, { focused: true });
+      }
+    });
+  } else {
+    createWindow();
+  }
+});
+
+function createWindow() {
+  chrome.windows.create({
+    url: chrome.runtime.getURL("popup.html"),
+    type: "popup",
+    width: 380,
+    height: 640
+  }, (win) => {
+    extensionWindowId = win.id;
+  });
+}
