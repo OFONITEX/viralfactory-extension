@@ -7,12 +7,15 @@
     "activeTab",
     "scripting",
     "storage",
-    "identity"
+    "identity",
+    "alarms",
+    "notifications"
   ],
   "host_permissions": [
     "https://www.tiktok.com/*",
     "https://api.anthropic.com/*",
     "https://api.suno.ai/*",
+    "https://api.sunoapi.org/*",
     "https://graph.facebook.com/*",
     "https://www.googleapis.com/*",
     "https://generativelanguage.googleapis.com/*"
@@ -33,6 +36,9 @@
   ],
   "background": {
     "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; connect-src 'self' https://api.sunoapi.org https://generativelanguage.googleapis.com https://api.anthropic.com https://api.suno.ai https://graph.facebook.com https://www.googleapis.com"
   },
   "web_accessible_resources": [
     {

@@ -191,8 +191,50 @@
           <div class="status-pill pending" id="musicPill">Pending</div>
           <span class="render-desc">Suno AI · ~90 seconds</span>
         </div>
-        <button class="btn-sub" id="genMusicBtn">Generate Music</button>
-        <audio class="audio-player hidden" id="audioPlayer" controls></audio>
+
+        <!-- Custom / Non-Custom settings -->
+        <div class="suno-settings" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+          <div class="toggle-row">
+            <label class="toggle-label" style="font-size: 11px;">
+              <input type="checkbox" id="sunoCustomMode" checked>
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              Use generated lyrics (Custom Mode)
+            </label>
+          </div>
+
+          <!-- Direct Prompt for Non-Custom mode -->
+          <div class="field-group hidden" id="sunoPromptGroup">
+            <label class="field-label" style="font-size:11px;">Description / Prompt</label>
+            <textarea class="field-textarea" id="sunoPrompt" maxlength="500" placeholder="Describe the style and topic of the song (max 500 chars)..." style="height: 60px; font-size: 12px; padding: 6px;"></textarea>
+            <div style="text-align: right; font-size: 10px; color: var(--muted); margin-top: 2px;" id="sunoPromptCounter">0 / 500</div>
+          </div>
+
+          <div class="suno-control-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
+            <div class="field-group" style="margin-bottom: 0;">
+              <label class="field-label" style="font-size: 11px;">AI Model</label>
+              <select class="field-input" id="sunoModel" style="height: 30px; font-size: 12px; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface2); color: var(--text);">
+                <option value="V4_5" selected>V4.5 (Latest)</option>
+                <option value="V4_0">V4.0</option>
+                <option value="V3_5">V3.5</option>
+                <option value="V3_0">V3.0</option>
+              </select>
+            </div>
+            <div class="toggle-row" style="align-items: center; height: 100%; display: flex;">
+              <label class="toggle-label" style="font-size: 11px; margin-top: 12px;">
+                <input type="checkbox" id="sunoInstrumental">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                Instrumental
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button class="btn-sub" id="genMusicBtn" style="flex: 1; margin-top: 0;">Generate Music</button>
+          <button class="btn-sub hidden" id="cancelMusicBtn" style="background: rgba(255,51,102,0.15); border-color: rgba(255,51,102,0.3); color: var(--pink); margin-top: 0; width: 80px;">Cancel</button>
+        </div>
+        
+        <audio class="audio-player hidden" id="audioPlayer" controls style="margin-top: 12px; width: 100%;"></audio>
       </div>
 
       <div class="render-section">

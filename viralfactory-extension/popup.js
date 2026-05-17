@@ -51,6 +51,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
   
+  // Suno page 3 UI wiring
+  const sunoCustomToggle = document.getElementById('sunoCustomMode');
+  if (sunoCustomToggle) {
+    sunoCustomToggle.addEventListener('change', (e) => {
+      const promptGroup = document.getElementById('sunoPromptGroup');
+      if (e.target.checked) {
+        promptGroup.classList.add('hidden');
+      } else {
+        promptGroup.classList.remove('hidden');
+      }
+    });
+  }
+
+  const sunoPromptText = document.getElementById('sunoPrompt');
+  if (sunoPromptText) {
+    sunoPromptText.addEventListener('input', (e) => {
+      const counter = document.getElementById('sunoPromptCounter');
+      counter.textContent = `${e.target.value.length} / 500`;
+    });
+  }
+
+  const cancelMusicBtn = document.getElementById('cancelMusicBtn');
+  if (cancelMusicBtn) {
+    cancelMusicBtn.addEventListener('click', cancelMusic);
+  }
+
+  // Register chrome runtime listener for background messages
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === 'SUNO_GENERATION_COMPLETE') {
+      handleSunoComplete(message.songs);
+    } else if (message.type === 'SUNO_GENERATION_ERROR') {
+      handleSunoError(message.error);
+    }
+  });
+
+  // Query background status on load in case a task is already running
+  chrome.runtime.sendMessage({ type: 'GET_SUNO_STATUS' }, (res) => {
+    if (res) {
+      if (res.polling) {
+        const pill = document.getElementById('musicPill');
+        const genBtn = document.getElementById('genMusicBtn');
+        const cancelBtn = document.getElementById('cancelMusicBtn');
+        if (pill) {
+          pill.className = 'status-pill loading';
+          pill.textContent = 'Generating...';
+        }
+        if (genBtn) genBtn.disabled = true;
+        if (cancelBtn) cancelBtn.classList.remove('hidden');
+      } else if (res.songs) {
+        handleSunoComplete(res.songs);
+      }
+    }
+  });
+
   await detectTikTokPage();
 });
 
@@ -596,75 +650,117 @@ async function generateMusic() {
   const keys = await getKeys();
   const pill = document.getElementById('musicPill');
   const genBtn = document.getElementById('genMusicBtn');
+  const cancelBtn = document.getElementById('cancelMusicBtn');
   const audioEl = document.getElementById('audioPlayer');
 
   if (!keys.sunoKey) {
-    // Demo: use a silent audio placeholder
     pill.textContent = 'No Suno key — demo mode';
     pill.className = 'status-pill loading';
     genBtn.textContent = 'Add Suno key in Settings';
     return;
   }
 
+  // Read config controls
+  const customMode = document.getElementById('sunoCustomMode').checked;
+  const instrumental = document.getElementById('sunoInstrumental').checked;
+  const model = document.getElementById('sunoModel').value;
+  const directPrompt = document.getElementById('sunoPrompt').value.trim();
+
+  if (!customMode && !directPrompt) {
+    alert('Please enter a description for the song!');
+    return;
+  }
+
+  const prompt = customMode ? (state.lyrics || 'ViralFactory prompt') : directPrompt;
+
   genBtn.disabled = true;
+  cancelBtn.classList.remove('hidden');
   pill.className = 'status-pill loading';
   pill.textContent = 'Generating...';
 
   try {
-    // Suno API call
     const res = await chrome.runtime.sendMessage({
-      type: 'FETCH_API',
+      type: 'START_SUNO_GENERATION',
       payload: {
-        url: 'https://api.suno.ai/api/generate',
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${keys.sunoKey}` },
-        body: {
-          prompt: state.lyrics.slice(0, 3000),
-          tags: state.selectedGenre,
-          title: 'ViralFactory Song',
-          make_instrumental: false
-        }
+        prompt,
+        genre: state.selectedGenre,
+        customMode,
+        instrumental,
+        model
       }
     });
 
-    if (res.ok && res.data) {
-      const jobId = res.data.id || res.data[0]?.id;
-      if (jobId) await pollSunoJob(jobId, keys.sunoKey, pill, audioEl);
-    } else {
-      throw new Error(res.data?.detail || 'Suno error');
+    if (res.error) {
+      throw new Error(res.error);
     }
   } catch (e) {
     pill.className = 'status-pill error';
     pill.textContent = 'Error';
     genBtn.disabled = false;
+    cancelBtn.classList.add('hidden');
     alert('Music generation failed: ' + e.message);
   }
 }
 
-async function pollSunoJob(jobId, key, pill, audioEl) {
-  for (let i = 0; i < 30; i++) {
-    await sleep(4000);
-    const res = await chrome.runtime.sendMessage({
-      type: 'FETCH_API',
-      payload: {
-        url: `https://api.suno.ai/api/feed/?ids=${jobId}`,
-        headers: { 'Authorization': `Bearer ${key}` }
-      }
-    });
+async function cancelMusic() {
+  const pill = document.getElementById('musicPill');
+  const genBtn = document.getElementById('genMusicBtn');
+  const cancelBtn = document.getElementById('cancelMusicBtn');
 
-    const track = res.data?.[0];
-    if (track?.status === 'complete' && track?.audio_url) {
-      state.audioUrl = track.audio_url;
+  await chrome.runtime.sendMessage({ type: 'CANCEL_SUNO_GENERATION' });
+
+  pill.className = 'status-pill pending';
+  pill.textContent = 'Pending';
+  genBtn.disabled = false;
+  genBtn.textContent = 'Generate Music';
+  cancelBtn.classList.add('hidden');
+}
+
+function handleSunoComplete(songs) {
+  const pill = document.getElementById('musicPill');
+  const genBtn = document.getElementById('genMusicBtn');
+  const cancelBtn = document.getElementById('cancelMusicBtn');
+  const audioEl = document.getElementById('audioPlayer');
+
+  if (songs && songs.length > 0) {
+    state.audioUrl = songs[0].audioUrl;
+    
+    if (pill) {
       pill.className = 'status-pill done';
       pill.textContent = 'Ready ✓';
-      audioEl.src = track.audio_url;
-      audioEl.classList.remove('hidden');
-      saveSession();
-      return;
     }
+    if (audioEl) {
+      audioEl.src = state.audioUrl;
+      audioEl.classList.remove('hidden');
+    }
+    if (genBtn) {
+      genBtn.disabled = true;
+      genBtn.textContent = 'Music Generated';
+    }
+    if (cancelBtn) {
+      cancelBtn.classList.add('hidden');
+    }
+    saveSession();
   }
-  pill.className = 'status-pill error';
-  pill.textContent = 'Timeout';
+}
+
+function handleSunoError(errorMsg) {
+  const pill = document.getElementById('musicPill');
+  const genBtn = document.getElementById('genMusicBtn');
+  const cancelBtn = document.getElementById('cancelMusicBtn');
+
+  if (pill) {
+    pill.className = 'status-pill error';
+    pill.textContent = 'Error';
+  }
+  if (genBtn) {
+    genBtn.disabled = false;
+    genBtn.textContent = 'Generate Music';
+  }
+  if (cancelBtn) {
+    cancelBtn.classList.add('hidden');
+  }
+  alert('Music generation failed: ' + errorMsg);
 }
 
 // ─── CANVAS VIDEO RENDERER ─────────────────────────────────────────────────
