@@ -93,7 +93,7 @@ async function startSunoGeneration({ prompt, genre, customMode, instrumental, mo
     customMode: !!customMode,
     instrumental: !!instrumental,
     model: model || 'V4_5',
-    callBackUrl: ''
+    callBackUrl: 'https://example.com/callback'
   };
 
   if (bodyObj.customMode) {
