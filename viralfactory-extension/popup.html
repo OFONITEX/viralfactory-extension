@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ViralFactory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🎵</div>
+      <span class="logo-text">ViralFactory</span>
+    </div>
+    <button class="settings-btn" id="settingsBtn" title="API Keys & Settings">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- SETTINGS PANEL (overlay) -->
+  <div class="settings-panel hidden" id="settingsPanel">
+    <div class="settings-header">
+      <span>API Keys</span>
+      <button class="close-btn" id="closeSettings">✕</button>
+    </div>
+    <div class="settings-body">
+      <div class="field-group">
+        <label class="field-label">Gemini API Key</label>
+        <input type="password" class="field-input" id="geminiKey" placeholder="AIza...">
+        <span class="field-hint">Get from aistudio.google.com</span>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Suno API Key <span class="badge-optional">optional</span></label>
+        <input type="password" class="field-input" id="sunoKey" placeholder="suno_...">
+        <span class="field-hint">For AI music generation</span>
+      </div>
+      <div class="field-divider">Social Publishing</div>
+      <div class="field-group">
+        <label class="field-label">Facebook Access Token</label>
+        <input type="password" class="field-input" id="fbToken" placeholder="EAAx...">
+      </div>
+      <div class="field-group">
+        <label class="field-label">YouTube OAuth Token</label>
+        <input type="password" class="field-input" id="ytToken" placeholder="ya29...">
+      </div>
+      <div class="field-group">
+        <label class="field-label">TikTok Session Cookie</label>
+        <input type="password" class="field-input" id="ttSession" placeholder="sessionid=...">
+        <span class="field-hint">Copy from TikTok DevTools > Application > Cookies</span>
+      </div>
+      <button class="btn-save" id="saveSettings">Save Keys 🔒</button>
+      <div class="save-confirm hidden" id="saveConfirm">✓ Saved to local storage</div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- STEP INDICATOR -->
+    <div class="steps" id="stepIndicator">
+      <div class="step active" data-step="1">
+        <div class="step-dot">1</div>
+        <span>Scrape</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" data-step="2">
+        <div class="step-dot">2</div>
+        <span>Compose</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" data-step="3">
+        <div class="step-dot">3</div>
+        <span>Render</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" data-step="4">
+        <div class="step-dot">4</div>
+        <span>Publish</span>
+      </div>
+    </div>
+
+    <!-- ── PAGE 1: SCRAPE ── -->
+    <div class="page active" id="page1">
+      <div class="tiktok-status" id="tiktokStatus">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Detecting TikTok video...</span>
+      </div>
+
+      <div class="video-card" id="videoCard" style="display:none">
+        <div class="video-thumbnail" id="videoThumb">
+          <div class="thumb-placeholder">🎬</div>
+        </div>
+        <div class="video-info">
+          <div class="video-title" id="videoTitle">Loading...</div>
+          <div class="video-creator" id="videoCreator">@creator</div>
+        </div>
+      </div>
+
+      <button class="btn-main" id="scrapeBtn" disabled>
+        <span class="btn-icon">🕷️</span>
+        <span>Scrape Comments</span>
+      </button>
+
+      <div class="loading hidden" id="scrapeLoading">
+        <div class="loading-bar"><div class="loading-fill" id="scrapeFill"></div></div>
+        <span class="loading-text" id="scrapeLoadingText">Scrolling comment section...</span>
+      </div>
+
+      <div class="comment-preview hidden" id="commentPreview">
+        <div class="preview-header">
+          <span class="preview-label">Top comments grabbed</span>
+          <span class="preview-count" id="commentCount">0</span>
+        </div>
+        <div class="comment-list" id="commentList"></div>
+        <button class="btn-next" id="goToCompose">
+          Compose Song →
+        </button>
+      </div>
+    </div>
+
+    <!-- ── PAGE 2: COMPOSE ── -->
+    <div class="page hidden" id="page2">
+      <div class="compose-section">
+        <label class="field-label">Genre / Vibe</label>
+        <div class="genre-grid" id="genreGrid">
+          <button class="genre-btn active" data-genre="pop-punk">🎸 Pop-punk</button>
+          <button class="genre-btn" data-genre="hip-hop">🎤 Hip-hop</button>
+          <button class="genre-btn" data-genre="country">🤠 Country</button>
+          <button class="genre-btn" data-genre="opera">🎭 Opera</button>
+          <button class="genre-btn" data-genre="bossa-nova">🌴 Bossa nova</button>
+          <button class="genre-btn" data-genre="death-metal">💀 Death metal</button>
+        </div>
+      </div>
+
+      <div class="compose-section">
+        <label class="field-label">Song options</label>
+        <div class="toggle-row">
+          <label class="toggle-label">
+            <input type="checkbox" id="nameDropToggle" checked>
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            Name-drop commenters
+          </label>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle-label">
+            <input type="checkbox" id="cleanToggle" checked>
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            Keep it clean (SFW)
+          </label>
+        </div>
+      </div>
+
+      <div class="compose-section">
+        <label class="field-label">Extra instructions <span class="badge-optional">optional</span></label>
+        <textarea class="field-textarea" id="extraPrompt" placeholder="e.g. Make it really dramatic, mention the original video was about a dog..."></textarea>
+      </div>
+
+      <button class="btn-main" id="composeBtn">
+        <span class="btn-icon">🤖</span>
+        <span>Write Lyrics with Gemini</span>
+      </button>
+
+      <div class="loading hidden" id="composeLoading">
+        <div class="loading-bar"><div class="loading-fill pulse-fill"></div></div>
+        <span class="loading-text">Gemini is feeling inspired...</span>
+      </div>
+
+      <div class="lyrics-result hidden" id="lyricsResult">
+        <div class="lyrics-label">Generated Lyrics</div>
+        <div class="lyrics-box" id="lyricsBox"></div>
+        <button class="btn-regenerate" id="regenBtn">↺ Regenerate</button>
+        <button class="btn-next" id="goToRender">Generate Music & Video →</button>
+      </div>
+
+      <button class="btn-back" id="backToScrape">← Back</button>
+    </div>
+
+    <!-- ── PAGE 3: RENDER ── -->
+    <div class="page hidden" id="page3">
+
+      <div class="render-section">
+        <div class="render-label">🎵 Music Generation</div>
+        <div class="render-status" id="musicStatus">
+          <div class="status-pill pending" id="musicPill">Pending</div>
+          <span class="render-desc">Suno AI · ~90 seconds</span>
+        </div>
+        <button class="btn-sub" id="genMusicBtn">Generate Music</button>
+        <audio class="audio-player hidden" id="audioPlayer" controls></audio>
+      </div>
+
+      <div class="render-section">
+        <div class="render-label">🎬 Video Preview</div>
+        <div class="canvas-wrap">
+          <canvas id="videoCanvas" width="360" height="200"></canvas>
+          <div class="canvas-overlay" id="canvasOverlay">
+            <button class="render-play-btn" id="renderVideoBtn">▶ Preview Video</button>
+          </div>
+        </div>
+        <div class="render-options">
+          <label class="field-label" style="font-size:11px">Format</label>
+          <div class="format-row">
+            <button class="format-btn active" data-fmt="9:16">9:16 TikTok</button>
+            <button class="format-btn" data-fmt="16:9">16:9 YouTube</button>
+            <button class="format-btn" data-fmt="1:1">1:1 Feed</button>
+          </div>
+        </div>
+        <button class="btn-next" id="goToPublish">Publish Everywhere →</button>
+      </div>
+
+      <button class="btn-back" id="backToCompose">← Back</button>
+    </div>
+
+    <!-- ── PAGE 4: PUBLISH ── -->
+    <div class="page hidden" id="page4">
+      <div class="publish-intro">Ready to drop. Choose platforms:</div>
+
+      <div class="platform-cards">
+
+        <div class="platform-card" id="ttCard">
+          <div class="platform-left">
+            <div class="platform-icon tt">🎵</div>
+            <div>
+              <div class="platform-name">TikTok</div>
+              <div class="platform-sub">Repost on same account</div>
+            </div>
+          </div>
+          <div class="platform-right">
+            <div class="platform-status" id="ttStatus">—</div>
+            <button class="btn-publish" id="ttPublishBtn" data-platform="tiktok">Post</button>
+          </div>
+        </div>
+
+        <div class="platform-card" id="ytCard">
+          <div class="platform-left">
+            <div class="platform-icon yt">▶</div>
+            <div>
+              <div class="platform-name">YouTube</div>
+              <div class="platform-sub">Upload as YouTube Short</div>
+            </div>
+          </div>
+          <div class="platform-right">
+            <div class="platform-status" id="ytStatus">—</div>
+            <button class="btn-publish" id="ytPublishBtn" data-platform="youtube">Post</button>
+          </div>
+        </div>
+
+        <div class="platform-card" id="fbCard">
+          <div class="platform-left">
+            <div class="platform-icon fb">f</div>
+            <div>
+              <div class="platform-name">Facebook</div>
+              <div class="platform-sub">Post as Reel</div>
+            </div>
+          </div>
+          <div class="platform-right">
+            <div class="platform-status" id="fbStatus">—</div>
+            <button class="btn-publish" id="fbPublishBtn" data-platform="facebook">Post</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="publish-caption">
+        <label class="field-label">Caption <span class="badge-optional">auto-generated</span></label>
+        <textarea class="field-textarea" id="captionText" rows="3"></textarea>
+      </div>
+
+      <button class="btn-main publish-all-btn" id="publishAllBtn">
+        <span class="btn-icon">🚀</span>
+        <span>Post to All Platforms</span>
+      </button>
+
+      <div class="success-banner hidden" id="successBanner">
+        <div class="success-icon">🎉</div>
+        <div class="success-text">Posted! Go check your feeds.</div>
+      </div>
+
+      <button class="btn-back" id="backToRender">← Back</button>
+    </div>
+
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
