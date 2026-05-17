@@ -4,6 +4,9 @@
 (function () {
   'use strict';
 
+  let floatingContainer = null;
+  let floatingPanel = null;
+
   // Listen for scrape requests and panel toggles from the background/popup
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'SCRAPE_COMMENTS') {
@@ -172,28 +175,41 @@
   }
 
   function toggleFloatingWidget() {
-    let panel = document.getElementById('vf-floating-panel');
-    if (panel) {
-      if (panel.style.display === 'none') {
-        panel.style.display = 'block';
+    if (floatingContainer) {
+      if (floatingContainer.style.display === 'none') {
+        floatingContainer.style.display = 'block';
       } else {
-        panel.style.display = 'none';
+        floatingContainer.style.display = 'none';
       }
       return;
     }
 
-    // Create the container panel
-    panel = document.createElement('div');
-    panel.id = 'vf-floating-panel';
+    // Create the host container in document.body
+    floatingContainer = document.createElement('div');
+    floatingContainer.id = 'vf-floating-container';
     
-    // Style the container beautifully (sleek glassmorphic dark theme)
-    Object.assign(panel.style, {
+    // Style the host container (fixed position, z-index)
+    Object.assign(floatingContainer.style, {
       position: 'fixed',
       top: '80px',
       right: '20px',
       width: '380px',
       height: '640px',
       zIndex: '2147483647',
+      pointerEvents: 'auto'
+    });
+
+    // Attach closed shadow root to isolate from TikTok scripts
+    const shadowRoot = floatingContainer.attachShadow({ mode: 'closed' });
+
+    // Create the actual panel div inside the shadow root
+    floatingPanel = document.createElement('div');
+    floatingPanel.id = 'vf-floating-panel';
+    
+    // Style the container beautifully (sleek glassmorphic dark theme)
+    Object.assign(floatingPanel.style, {
+      width: '100%',
+      height: '100%',
       backgroundColor: '#121319', // Sleek rich dark
       border: '1px solid rgba(255, 255, 255, 0.12)',
       borderRadius: '16px',
@@ -201,7 +217,6 @@
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
-      transition: 'opacity 0.2s ease, transform 0.2s ease',
       color: '#fff',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
     });
@@ -275,11 +290,13 @@
     });
     closeBtn.onmouseover = () => closeBtn.style.color = '#FF3366';
     closeBtn.onmouseout = () => closeBtn.style.color = 'rgba(255, 255, 255, 0.6)';
-    closeBtn.onclick = () => panel.style.display = 'none';
+    closeBtn.onclick = () => {
+      floatingContainer.style.display = 'none';
+    };
     rightGroup.appendChild(closeBtn);
 
     header.appendChild(rightGroup);
-    panel.appendChild(header);
+    floatingPanel.appendChild(header);
 
     // Create the iframe
     const iframe = document.createElement('iframe');
@@ -290,17 +307,18 @@
       height: '100%',
       backgroundColor: 'transparent'
     });
-    panel.appendChild(iframe);
+    floatingPanel.appendChild(iframe);
 
-    document.body.appendChild(panel);
+    shadowRoot.appendChild(floatingPanel);
+    document.body.appendChild(floatingContainer);
 
     // Position persistence
     chrome.storage.local.get('vf_panel_pos', ({ vf_panel_pos }) => {
       if (vf_panel_pos) {
-        panel.style.top = vf_panel_pos.top;
-        panel.style.left = vf_panel_pos.left;
-        panel.style.right = 'auto';
-        panel.style.bottom = 'auto';
+        floatingContainer.style.top = vf_panel_pos.top;
+        floatingContainer.style.left = vf_panel_pos.left;
+        floatingContainer.style.right = 'auto';
+        floatingContainer.style.bottom = 'auto';
       }
     });
 
@@ -310,20 +328,19 @@
     let initialLeft, initialTop;
 
     header.addEventListener('mousedown', (e) => {
-      // Disable pointer events on the iframe so drag is super smooth
       iframe.style.pointerEvents = 'none';
       isDragging = true;
       startX = e.clientX;
       startY = e.clientY;
       
-      const rect = panel.getBoundingClientRect();
+      const rect = floatingContainer.getBoundingClientRect();
       initialLeft = rect.left;
       initialTop = rect.top;
       
-      panel.style.right = 'auto';
-      panel.style.bottom = 'auto';
-      panel.style.left = `${initialLeft}px`;
-      panel.style.top = `${initialTop}px`;
+      floatingContainer.style.right = 'auto';
+      floatingContainer.style.bottom = 'auto';
+      floatingContainer.style.left = `${initialLeft}px`;
+      floatingContainer.style.top = `${initialTop}px`;
       
       e.preventDefault();
     });
@@ -337,12 +354,11 @@
       let newLeft = initialLeft + dx;
       let newTop = initialTop + dy;
       
-      // Boundaries checks
       newLeft = Math.max(0, Math.min(window.innerWidth - 380, newLeft));
       newTop = Math.max(0, Math.min(window.innerHeight - 640, newTop));
       
-      panel.style.left = `${newLeft}px`;
-      panel.style.top = `${newTop}px`;
+      floatingContainer.style.left = `${newLeft}px`;
+      floatingContainer.style.top = `${newTop}px`;
     });
 
     document.addEventListener('mouseup', () => {
@@ -350,11 +366,10 @@
       iframe.style.pointerEvents = 'auto';
       isDragging = false;
       
-      // Save position to local storage
       chrome.storage.local.set({
         vf_panel_pos: {
-          top: panel.style.top,
-          left: panel.style.left,
+          top: floatingContainer.style.top,
+          left: floatingContainer.style.left,
           right: 'auto',
           bottom: 'auto'
         }
