@@ -34,20 +34,16 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 // Standalone Draggable Window Management
-let extensionWindowId = null;
-
 chrome.action.onClicked.addListener(() => {
-  if (extensionWindowId !== null) {
-    chrome.windows.get(extensionWindowId, (win) => {
-      if (chrome.runtime.lastError || !win) {
-        createWindow();
-      } else {
-        chrome.windows.update(extensionWindowId, { focused: true });
-      }
-    });
-  } else {
-    createWindow();
-  }
+  const popupUrl = chrome.runtime.getURL("popup.html");
+  
+  chrome.tabs.query({ url: popupUrl }, (tabs) => {
+    if (tabs && tabs.length > 0) {
+      chrome.windows.update(tabs[0].windowId, { focused: true });
+    } else {
+      createWindow();
+    }
+  });
 });
 
 function createWindow() {
@@ -55,8 +51,7 @@ function createWindow() {
     url: chrome.runtime.getURL("popup.html"),
     type: "popup",
     width: 380,
-    height: 640
-  }, (win) => {
-    extensionWindowId = win.id;
+    height: 640,
+    focused: true
   });
 }
