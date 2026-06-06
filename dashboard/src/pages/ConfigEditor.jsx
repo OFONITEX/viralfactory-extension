@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Save, RefreshCw } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
-const WORKERS_URL = 'https://viralfactory.wizprinze212.workers.dev/remoteConfig.json';
 
 const card = {
   background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
@@ -20,11 +20,13 @@ export default function ConfigEditor() {
   async function fetchConfig() {
     setLoading(true); setMsg(''); setErr('');
     try {
-      const res = await fetch(WORKERS_URL + '?ts=' + Date.now());
-      const data = await res.json();
-      setConfig(data);
-      setRaw(JSON.stringify(data, null, 2));
-    } catch (e) { setErr('Could not fetch config from CDN.'); }
+      const { data, error } = await supabase.from('remote_config').select('config').single();
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      const configData = data?.config || { apiKeys: {}, features: {} };
+      setConfig(configData);
+      setRaw(JSON.stringify(configData, null, 2));
+    } catch (e) { setErr('Could not fetch config from Supabase: ' + e.message); }
     setLoading(false);
   }
 
@@ -33,16 +35,18 @@ export default function ConfigEditor() {
   function handleRawChange(val) {
     setRaw(val);
     setJsonErr('');
-    try { JSON.parse(val); } catch { setJsonErr('Invalid JSON — fix before saving.'); }
+    try { JSON.parse(val); } catch { setJsonErr('Invalid JSON � fix before saving.'); }
   }
 
-  // Quick-edit helpers for known fields
   function updateKey(path, value) {
     try {
       const clone = JSON.parse(raw);
       const keys = path.split('.');
       let obj = clone;
-      for (let i = 0; i < keys.length - 1; i++) obj = obj[keys[i]];
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (!obj[keys[i]]) obj[keys[i]] = {};
+        obj = obj[keys[i]];
+      }
       obj[keys[keys.length - 1]] = value;
       setRaw(JSON.stringify(clone, null, 2));
       setJsonErr('');
@@ -60,11 +64,20 @@ export default function ConfigEditor() {
     if (jsonErr) return;
     setSaving(true); setMsg(''); setErr('');
     try {
-      JSON.parse(raw); // validate
-      // NOTE: To enable direct save, deploy a Workers KV-backed PUT endpoint.
-      // For now, copy the JSON below and update remoteConfig.json in your repo.
-      setMsg('✓ Config validated. Copy below JSON → update remoteConfig.json in your repo → push to GitHub → auto-deploys to Workers.');
-    } catch (e) { setErr('Invalid JSON.'); }
+      const parsed = JSON.parse(raw); // validate
+      
+      const { error } = await supabase.from('remote_config')
+        .update({ config: parsed })
+        .eq('id', '00000000-0000-0000-0000-000000000000');
+        
+      if (error) {
+        // Try insert if update fails
+        const { error: insertErr } = await supabase.from('remote_config').insert({ id: '00000000-0000-0000-0000-000000000000', config: parsed });
+        if (insertErr) throw insertErr;
+      }
+      
+      setMsg('? Config saved directly to Supabase!');
+    } catch (e) { setErr('Save failed: ' + e.message); }
     setSaving(false);
   }
 

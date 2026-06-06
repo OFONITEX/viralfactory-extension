@@ -48,3 +48,45 @@ create policy "Users can update own profile"
 insert into public.profiles (id, email)
 select id, email from auth.users
 on conflict (id) do update set email = excluded.email;
+
+-- 6. Remote Config Table (Dashboard Control)
+create table if not exists public.remote_config (
+  id uuid primary key default '00000000-0000-0000-0000-000000000000'::uuid,
+  config jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+-- Initialize with a default config row if empty
+insert into public.remote_config (id, config)
+values (
+  '00000000-0000-0000-0000-000000000000',
+  '{
+    "apiKeys": {
+      "gemini": "REPLACE_ME",
+      "suno": "REPLACE_ME",
+      "groq": "REPLACE_ME",
+      "sunoCallbackUrl": "https://hook.us1.make.com/xxxx"
+    },
+    "features": {
+      "musicGeneration": true,
+      "multiPlatformPublish": false,
+      "analytics": true
+    }
+  }'::jsonb
+) on conflict do nothing;
+
+alter table public.remote_config enable row level security;
+
+-- Allow public read access (for the extension to fetch the config via anon key)
+create policy "Public read access to config"
+  on public.remote_config for select
+  using (true);
+
+-- Allow authenticated users to update (The dashboard UI will use the logged-in admin user to save this)
+create policy "Authenticated users can update config"
+  on public.remote_config for update
+  using (auth.role() = 'authenticated');
+  
+create policy "Authenticated users can insert config"
+  on public.remote_config for insert
+  with check (auth.role() = 'authenticated');

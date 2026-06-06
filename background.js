@@ -87,14 +87,22 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 async function syncRemoteConfig() {
-  const url = 'https://viralfactory.wizprinze212.workers.dev/remoteConfig.json';
+  const url = 'https://pescssnflhgodwrdacja.supabase.co/rest/v1/remote_config?id=eq.00000000-0000-0000-0000-000000000000&select=config';
+  const apikey = 'sb_publishable_UD46OHsij9Q-O4nbnGqEOg_rCkM-Yak';
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: { 'apikey': apikey, 'Authorization': `Bearer ${apikey}` } });
     if (res.ok) {
-      const config = await res.json();
-      await chrome.storage.local.set({ vf_remote_config: config });
-      console.log('Remote config synced successfully 🛡️');
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const config = data[0].config;
+        await chrome.storage.local.set({ vf_remote_config: config });
+        console.log('Remote config synced successfully from Supabase ???');
+      }
     }
+  } catch (err) {
+    console.warn('Failed to sync remote config, using cached defaults:', err.message);
+  }
+}
   } catch (err) {
     console.warn('Failed to sync remote config, using cached defaults:', err.message);
   }
