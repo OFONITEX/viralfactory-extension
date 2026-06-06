@@ -32,7 +32,23 @@
     </div>
     <div class="settings-body">
 
-      <div class="field-divider" style="margin-top:0;">Account</div>
+      <div class="field-divider" style="margin-top:0;">Social Publishing</div>
+      <div class="field-group">
+        <label class="field-label">TikTok Session Cookie</label>
+        <input type="password" class="field-input" id="ttSession" placeholder="sessionid=...">
+      </div>
+      <div class="field-group">
+        <label class="field-label">YouTube OAuth Token</label>
+        <input type="password" class="field-input" id="ytToken" placeholder="ya29...">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Facebook Access Token</label>
+        <input type="password" class="field-input" id="fbToken" placeholder="EAAx...">
+      </div>
+      <button class="btn-save" id="saveSettings" style="margin-top:8px;">Save Social Keys &#x1F512;</button>
+      <div class="save-confirm hidden" id="saveConfirm">&#x2713; Saved to local storage</div>
+
+      <div class="field-divider" style="margin-top:12px;">Account</div>
       <div id="accountInfoSection" class="hidden">
         <div class="field-group" style="margin-bottom:6px;">
           <span class="field-hint" style="color:var(--text);font-size:12px;margin-bottom:6px;" id="userEmailText">Signed in as: user@example.com</span>
@@ -55,23 +71,6 @@
       <div class="field-divider" style="margin-top:12px;">Preferences</div>
       <div class="toggle-row" style="margin-top:6px;margin-bottom:0;">
         <label class="toggle-label" style="font-size:11px;">
-          <input type="checkbox" id="autoOpenPref" checked>
-          <span class="toggle-track"><span class="toggle-thumb"></span></span>
-          Auto-open panel on TikTok videos
-        </label>
-      </div>
-    </div>
-  </div>
-      <!-- Upgrade CTA Banner -->
-      <div style="margin-top:14px;background:linear-gradient(135deg,rgba(255,51,102,0.12),rgba(155,93,229,0.12));border:1px solid rgba(155,93,229,0.3);border-radius:10px;padding:12px;text-align:center;">
-        <div style="font-size:11px;font-weight:700;color:#c4b0f0;letter-spacing:0.5px;margin-bottom:4px;">⚡ CREATOR PLAN — $19/mo</div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Unlimited posts · All genres · Suno AI · Analytics</div>
-        <a href="https://buy.stripe.com/test_aFa3cx0xHaC9co42L3cEw00" target="_blank" rel="noreferrer" style="display:block;background:linear-gradient(135deg,#FF3366,#9B5DE5);color:#fff;font-size:11px;font-weight:700;padding:8px;border-radius:8px;text-decoration:none;letter-spacing:0.5px;">Upgrade Now → Stripe</a>
-      </div>
-
-      <div class="field-divider" style="margin-top:12px;">Preferences</div>
-      <div class="toggle-row" style="margin-top:6px;margin-bottom:0;">
-        <label class="toggle-label" style="font-size: 11px;">
           <input type="checkbox" id="autoOpenPref" checked>
           <span class="toggle-track"><span class="toggle-thumb"></span></span>
           Auto-open panel on TikTok videos

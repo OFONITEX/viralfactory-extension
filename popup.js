@@ -518,17 +518,20 @@ function setupSettingsPanel() {
 
 function saveKeys() {
   const keys = {
-    geminiKey: document.getElementById('geminiKey').value.trim(),
-    groqKey: document.getElementById('groqKey').value.trim(),
-    sunoKey: document.getElementById('sunoKey').value.trim(),
-    fbToken: document.getElementById('fbToken').value.trim(),
-    ytToken: document.getElementById('ytToken').value.trim(),
-    ttSession: document.getElementById('ttSession').value.trim(),
+    fbToken: document.getElementById('fbToken')?.value.trim() || '',
+    ytToken: document.getElementById('ytToken')?.value.trim() || '',
+    ttSession: document.getElementById('ttSession')?.value.trim() || ''
   };
-  chrome.storage.local.set({ vf_keys: keys }, () => {
-    const confirm = document.getElementById('saveConfirm');
-    confirm.classList.remove('hidden');
-    setTimeout(() => confirm.classList.add('hidden'), 2000);
+  chrome.storage.local.get('vf_keys', (data) => {
+    const existing = data.vf_keys || {};
+    const merged = { ...existing, ...keys };
+    chrome.storage.local.set({ vf_keys: merged }, () => {
+      const confirm = document.getElementById('saveConfirm');
+      if(confirm) {
+        confirm.classList.remove('hidden');
+        setTimeout(() => confirm.classList.add('hidden'), 2000);
+      }
+    });
   });
 }
 
@@ -542,12 +545,23 @@ function loadKeysIntoForm() {
   });
 }
 
-function getKeys() {
-  return new Promise(resolve => {
-    chrome.storage.local.get('vf_keys', ({ vf_keys }) => resolve(vf_keys || {}));
+async function getKeys() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['vf_keys', 'vf_remote_config'], (data) => {
+      const localKeys = data.vf_keys || {};
+      const remoteConfig = data.vf_remote_config || {};
+      const remoteKeys = remoteConfig.apiKeys || {};
+      
+      resolve({
+        ...localKeys,
+        geminiKey: remoteKeys.gemini || '',
+        sunoKey: remoteKeys.suno || '',
+        groqKey: remoteKeys.groq || '',
+        sunoCallbackUrl: remoteKeys.sunoCallbackUrl || ''
+      });
+    });
   });
 }
-
 // ─── PAGE NAVIGATION ───────────────────────────────────────────────────────
 function showPage(n) {
   state.currentPage = n;
