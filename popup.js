@@ -365,7 +365,7 @@ const SUPABASE_URL = 'https://pescssnflhgodwrdacja.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_UD46OHsij9Q-O4nbnGqEOg_rCkM-Yak';
 
 async function supabaseSignUp(name, email, password) {
-  const res = await fetch(${SUPABASE_URL}/auth/v1/signup, {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
     body: JSON.stringify({ email, password, data: { full_name: name } })
@@ -374,7 +374,7 @@ async function supabaseSignUp(name, email, password) {
 }
 
 async function supabaseSignIn(email, password) {
-  const res = await fetch(${SUPABASE_URL}/auth/v1/token?grant_type=password, {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
     body: JSON.stringify({ email, password })
@@ -383,9 +383,9 @@ async function supabaseSignIn(email, password) {
 }
 
 async function supabaseSignOut(accessToken) {
-  await fetch(${SUPABASE_URL}/auth/v1/logout, {
+  await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': Bearer  }
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${accessToken}` }
   }).catch(() => {});
 }
 
