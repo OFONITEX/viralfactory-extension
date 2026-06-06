@@ -68,27 +68,12 @@ function Sidebar({ onSignOut }) {
 }
 
 export default function App() {
-  const [session, setSession] = useState(undefined); // undefined = loading
   const navigate = useNavigate();
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_, s) => setSession(s));
-    return () => sub.subscription.unsubscribe();
-  }, []);
 
   async function signOut() {
     await supabase.auth.signOut();
     navigate('/');
   }
-
-  if (session === undefined) return (
-    <div style={{ minHeight: '100vh', background: '#0a0a12', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#555', fontSize: 14 }}>Loading...</div>
-    </div>
-  );
-
-  if (!session) return <Login onLogin={s => setSession(s)} />;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#0a0a12', fontFamily: "'Inter', sans-serif", color: '#ccc' }}>
