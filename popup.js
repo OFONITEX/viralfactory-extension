@@ -484,7 +484,7 @@ function updateAuthUI(isAuthenticated) {
   if (isAuthenticated && state.user) {
     if (infoSection) infoSection.classList.remove('hidden');
     if (promptSection) promptSection.classList.add('hidden');
-    if (emailText) emailText.textContent = Signed in as: ;
+    if (emailText) emailText.textContent = `Signed in as: ${state.user.email}`;
   } else {
     if (infoSection) infoSection.classList.add('hidden');
     if (promptSection) promptSection.classList.remove('hidden');
