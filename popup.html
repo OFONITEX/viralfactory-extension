@@ -16,11 +16,12 @@
       <div class="logo-icon">🎵</div>
       <span class="logo-text">ViralFactory</span>
     </div>
-    <button class="settings-btn" id="settingsBtn" title="API Keys & Settings">
+    <div style="display:flex;gap:6px;align-items:center;"><a id="upgradeHeaderBtn" href="https://buy.stripe.com/test_aFa3cx0xHaC9co42L3cEw00" target="_blank" rel="noreferrer" style="background:linear-gradient(135deg,#FF3366,#9B5DE5);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;text-decoration:none;letter-spacing:0.5px;white-space:nowrap;">&#9889; Upgrade</a><button class="settings-btn" id="settingsBtn" title="API Keys &amp; Settings">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
       </svg>
     </button>
+    </div>
   </header>
 
   <!-- SETTINGS PANEL (overlay) -->
@@ -73,6 +74,13 @@
       <div id="accountRegisterPrompt" class="field-group" style="margin-bottom: 0;">
         <span class="field-hint" style="color:var(--muted);font-size:11px;">Not signed in. Downloads and publishing are locked.</span>
         <button class="btn-sub" id="openSignupBtn" style="background:var(--pink-glow);border-color:var(--pink);color:var(--pink);margin-top:6px;">Sign Up Now 🚀</button>
+      </div>
+
+      <!-- Upgrade CTA Banner -->
+      <div style="margin-top:14px;background:linear-gradient(135deg,rgba(255,51,102,0.12),rgba(155,93,229,0.12));border:1px solid rgba(155,93,229,0.3);border-radius:10px;padding:12px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;color:#c4b0f0;letter-spacing:0.5px;margin-bottom:4px;">⚡ CREATOR PLAN — $19/mo</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Unlimited posts · All genres · Suno AI · Analytics</div>
+        <a href="https://buy.stripe.com/test_aFa3cx0xHaC9co42L3cEw00" target="_blank" rel="noreferrer" style="display:block;background:linear-gradient(135deg,#FF3366,#9B5DE5);color:#fff;font-size:11px;font-weight:700;padding:8px;border-radius:8px;text-decoration:none;letter-spacing:0.5px;">Upgrade Now → Stripe</a>
       </div>
 
       <div class="field-divider" style="margin-top:12px;">Preferences</div>

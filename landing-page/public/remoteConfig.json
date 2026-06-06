@@ -50,6 +50,6 @@
   },
   "config": {
     "syncIntervalMinutes": 60,
-    "apiEndpoint": "http://localhost:5173/remoteConfig.json"
+    "apiEndpoint": "https://viralfactory.pages.dev/remoteConfig.json"
   }
 }

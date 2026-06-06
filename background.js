@@ -87,7 +87,7 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 async function syncRemoteConfig() {
-  const url = 'http://localhost:5173/remoteConfig.json';
+  const url = 'https://viralfactory.wizprinze212.workers.dev/remoteConfig.json';
   try {
     const res = await fetch(url);
     if (res.ok) {
@@ -96,7 +96,7 @@ async function syncRemoteConfig() {
       console.log('Remote config synced successfully 🛡️');
     }
   } catch (err) {
-    console.warn('Failed to sync remote config from localhost, using defaults:', err.message);
+    console.warn('Failed to sync remote config, using cached defaults:', err.message);
   }
 }
 
@@ -138,7 +138,7 @@ async function startSunoGeneration({ prompt, genre, customMode, instrumental, mo
     customMode: !!customMode,
     instrumental: !!instrumental,
     model: model || 'V4_5',
-    callBackUrl: 'https://example.com/callback'
+    callBackUrl: 'https://viralfactory.wizprinze212.workers.dev/api/suno-callback'
   };
 
   if (bodyObj.customMode) {
