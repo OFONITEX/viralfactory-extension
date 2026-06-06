@@ -17,7 +17,8 @@
     }
 
     if (message.type === 'GET_VIDEO_META') {
-      sendResponse(getVideoMeta());
+      getVideoMeta().then(sendResponse).catch(() => sendResponse(null));
+      return true;
     }
 
     if (message.type === 'TOGGLE_WIDGET') {
@@ -27,28 +28,89 @@
 
   // ─── Scrape comments from TikTok DOM ───────────────────────────────────────
 
+  async function getSelectors() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get('vf_remote_config', ({ vf_remote_config }) => {
+        const defaults = {
+          commentItem: [
+            '[data-e2e="comment-list"] [data-e2e="comment-item"]',
+            '.DivCommentItemWrapper',
+            '[class*="CommentItem"]',
+            '[class*="comment-item"]'
+          ],
+          commentUsername: [
+            '[data-e2e="comment-username-1"]',
+            '[class*="author"]',
+            '[class*="Username"]',
+            '[href*="/@"]'
+          ],
+          commentText: [
+            '[data-e2e="comment-display"]',
+            '[data-e2e="comment-level-1"]',
+            '[class*="CommentText"]',
+            '[class*="comment-text"]',
+            '[class*="CommentDisplay"]',
+            '[class*="CommentContent"]',
+            'p',
+            'span'
+          ],
+          commentAvatar: [
+            'img[src*="tiktok"]',
+            'img[src*="muscdn"]',
+            'img[class*="avatar"]',
+            'img[class*="Avatar"]'
+          ],
+          commentLikes: [
+            '[data-e2e="comment-like-count"]',
+            '[class*="like"]',
+            '[class*="Like"]'
+          ],
+          videoTitle: [
+            '[data-e2e="browse-video-desc"]',
+            '[class*="DivVideoDesc"]',
+            '[class*="video-desc"]',
+            'h1[class*="Title"]',
+            '.video-meta-title'
+          ],
+          videoCreator: [
+            '[data-e2e="browse-username"]',
+            '[data-e2e="video-author"]',
+            '[class*="AuthorTitle"]',
+            '[class*="author-uniqueid"]',
+            '[class*="SpanUniqueId"]'
+          ]
+        };
+
+        if (vf_remote_config && vf_remote_config.selectors) {
+          resolve({
+            commentItem: vf_remote_config.selectors.commentItem || defaults.commentItem,
+            commentUsername: vf_remote_config.selectors.commentUsername || defaults.commentUsername,
+            commentText: vf_remote_config.selectors.commentText || defaults.commentText,
+            commentAvatar: vf_remote_config.selectors.commentAvatar || defaults.commentAvatar,
+            commentLikes: vf_remote_config.selectors.commentLikes || defaults.commentLikes,
+            videoTitle: vf_remote_config.selectors.videoTitle || defaults.videoTitle,
+            videoCreator: vf_remote_config.selectors.videoCreator || defaults.videoCreator,
+          });
+        } else {
+          resolve(defaults);
+        }
+      });
+    });
+  }
+
   async function scrapeComments() {
-    // Scroll comment panel to load more
+    const selMap = await getSelectors();
     await scrollCommentPanel();
 
     const comments = [];
     const seen = new Set();
 
-    // TikTok comment selectors (updated for current DOM structure)
-    const commentSelectors = [
-      '[data-e2e="comment-list"] [data-e2e="comment-item"]',
-      '.DivCommentItemWrapper',
-      '[class*="CommentItem"]',
-      '[class*="comment-item"]',
-    ];
-
     let commentNodes = [];
-    for (const sel of commentSelectors) {
+    for (const sel of selMap.commentItem) {
       commentNodes = document.querySelectorAll(sel);
       if (commentNodes.length > 0) break;
     }
 
-    // Fallback: grab any element containing comment-like structure
     if (commentNodes.length === 0) {
       commentNodes = document.querySelectorAll('[data-e2e*="comment"]');
     }
@@ -56,30 +118,21 @@
     commentNodes.forEach((node, i) => {
       try {
         // Username
-        const userEl = node.querySelector(
-          '[data-e2e="comment-username-1"], [class*="author"], [class*="Username"], [href*="/@"]'
-        );
-        const username = userEl?.textContent?.trim() || userEl?.getAttribute('href')?.replace('/@', '@') || `user_${i}`;
+        let username = `user_${i}`;
+        for (const sel of selMap.commentUsername) {
+          const userEl = node.querySelector(sel);
+          if (userEl) {
+            username = userEl.textContent?.trim() || userEl.getAttribute('href')?.replace('/@', '@') || username;
+            break;
+          }
+        }
 
         // Comment text
-        const textSelectors = [
-          '[data-e2e="comment-display"]',
-          '[data-e2e="comment-level-1"]',
-          '[class*="CommentText"]',
-          '[class*="comment-text"]',
-          '[class*="CommentDisplay"]',
-          '[class*="CommentContent"]',
-          'p',
-          'span'
-        ];
-        
         let text = "";
-        for (const sel of textSelectors) {
+        for (const sel of selMap.commentText) {
           const el = node.querySelector(sel);
           if (el) {
-            // Avoid picking up the username if it's nested
             if (el.querySelector('[data-e2e="comment-username-1"], [class*="author"]')) {
-              // If it's a container, try to find a sub-element that is just the text
               const sub = el.querySelector('span:not([class*="author"]), p');
               if (sub) {
                 text = sub.textContent?.trim();
@@ -95,12 +148,24 @@
         seen.add(text);
 
         // Avatar
-        const avatarEl = node.querySelector('img[src*="tiktok"], img[src*="muscdn"], img[class*="avatar"], img[class*="Avatar"]');
-        const avatar = avatarEl?.src || null;
+        let avatar = null;
+        for (const sel of selMap.commentAvatar) {
+          const avatarEl = node.querySelector(sel);
+          if (avatarEl && avatarEl.src) {
+            avatar = avatarEl.src;
+            break;
+          }
+        }
 
         // Likes
-        const likeEl = node.querySelector('[data-e2e="comment-like-count"], [class*="like"], [class*="Like"]');
-        const likes = parseLikeCount(likeEl?.textContent?.trim() || '0');
+        let likes = 0;
+        for (const sel of selMap.commentLikes) {
+          const likeEl = node.querySelector(sel);
+          if (likeEl) {
+            likes = parseLikeCount(likeEl.textContent?.trim() || '0');
+            break;
+          }
+        }
 
         if (text && username) {
           comments.push({ username, text, avatar, likes, index: i });
@@ -110,34 +175,50 @@
       }
     });
 
-    // Sort by likes, take top 30
     const sorted = comments.sort((a, b) => b.likes - a.likes).slice(0, 30);
+    const meta = await getVideoMeta(selMap);
 
     return {
       comments: sorted,
       total: commentNodes.length,
-      videoMeta: getVideoMeta()
+      videoMeta: meta
     };
   }
 
-  function getVideoMeta() {
-    // Try to extract video title and creator from page
-    const titleEl = document.querySelector(
-      '[data-e2e="browse-video-desc"], [class*="DivVideoDesc"], [class*="video-desc"], h1[class*="Title"], .video-meta-title'
-    );
-    const creatorEl = document.querySelector(
-      '[data-e2e="browse-username"], [data-e2e="video-author"], [class*="AuthorTitle"], [class*="author-uniqueid"], [class*="SpanUniqueId"]'
-    );
+  async function getVideoMeta(selMap) {
+    if (!selMap) {
+      selMap = await getSelectors();
+    }
     
-    // Look for playing video first, then fallback to visible video, then any video with src
+    let title = 'TikTok Video';
+    for (const sel of selMap.videoTitle) {
+      const titleEl = document.querySelector(sel);
+      if (titleEl && titleEl.textContent) {
+        title = titleEl.textContent.trim();
+        break;
+      }
+    }
+    if (title === 'TikTok Video') {
+      title = document.title.split(' | ')[0] || 'TikTok Video';
+    }
+
+    let creator = 'Unknown Creator';
+    for (const sel of selMap.videoCreator) {
+      const creatorEl = document.querySelector(sel);
+      if (creatorEl && creatorEl.textContent) {
+        creator = creatorEl.textContent.trim();
+        break;
+      }
+    }
+
     const videos = Array.from(document.querySelectorAll('video'));
     const playingVideo = videos.find(v => v.src && !v.paused && v.offsetHeight > 100);
     const visibleVideo = videos.find(v => v.src && v.offsetHeight > 100);
     const videoEl = playingVideo || visibleVideo || videos.find(v => v.src) || document.querySelector('video');
 
     return {
-      title: titleEl?.textContent?.trim() || document.title.split(' | ')[0] || 'TikTok Video',
-      creator: creatorEl?.textContent?.trim() || 'Unknown Creator',
+      title,
+      creator,
       url: window.location.href,
       videoSrc: videoEl?.src || null,
     };
@@ -181,15 +262,23 @@
     return new Promise(r => setTimeout(r, ms));
   }
 
-  function toggleFloatingWidget() {
+  function toggleFloatingWidget(forceShow) {
     if (floatingContainer) {
-      if (floatingContainer.style.display === 'none') {
+      if (forceShow === true) {
         floatingContainer.style.display = 'block';
-      } else {
+      } else if (forceShow === false) {
         floatingContainer.style.display = 'none';
+      } else {
+        if (floatingContainer.style.display === 'none') {
+          floatingContainer.style.display = 'block';
+        } else {
+          floatingContainer.style.display = 'none';
+        }
       }
       return;
     }
+
+    if (forceShow === false) return;
 
     // Create the host container in document.body
     floatingContainer = document.createElement('div');
@@ -382,6 +471,18 @@
         }
       });
     });
+  }
+
+  // Auto-open on TikTok video pages
+  const isVideoPage = /tiktok\.com\/@[^/]+\/video\/\d+/.test(window.location.href);
+  if (isVideoPage) {
+    setTimeout(() => {
+      chrome.storage.local.get('vf_auto_open_disabled', (data) => {
+        if (!data.vf_auto_open_disabled) {
+          toggleFloatingWidget(true);
+        }
+      });
+    }, 1500);
   }
 
 })();

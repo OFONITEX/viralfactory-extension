@@ -36,6 +36,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'OPEN_OPTIONS') {
     chrome.runtime.openOptionsPage();
   }
+
+  if (message.type === 'FETCH_AUDIO_BLOB') {
+    fetchAudioAsBase64(message.url).then(sendResponse).catch(err =>
+      sendResponse({ error: err.message })
+    );
+    return true;
+  }
 });
 
 async function handleFetch({ url, method = 'GET', headers = {}, body }) {
@@ -52,15 +59,51 @@ async function handleFetch({ url, method = 'GET', headers = {}, body }) {
   }
 }
 
-// Listen for extension install
+async function fetchAudioAsBase64(url) {
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buffer = await res.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+    const base64 = btoa(binary);
+    const mimeType = res.headers.get('content-type') || 'audio/mpeg';
+    return { ok: true, base64, mimeType };
+  } catch (err) {
+    return { error: err.message };
+  }
+}
+
+// Listen for extension install & startup
 chrome.runtime.onInstalled.addListener(() => {
   console.log('ViralFactory installed! 🎵');
+  syncRemoteConfig();
+  chrome.alarms.create('syncConfig', { periodInMinutes: 60 });
 });
+
+chrome.runtime.onStartup.addListener(() => {
+  syncRemoteConfig();
+});
+
+async function syncRemoteConfig() {
+  const url = 'http://localhost:5173/remoteConfig.json';
+  try {
+    const res = await fetch(url);
+    if (res.ok) {
+      const config = await res.json();
+      await chrome.storage.local.set({ vf_remote_config: config });
+      console.log('Remote config synced successfully 🛡️');
+    }
+  } catch (err) {
+    console.warn('Failed to sync remote config from localhost, using defaults:', err.message);
+  }
+}
 
 // In-Page Floating Panel Trigger
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab.url || !tab.url.includes('tiktok.com')) {
-    alert("Please navigate to TikTok to use ViralFactory!");
+    console.warn("Please navigate to TikTok to use ViralFactory!");
     return;
   }
   
@@ -73,10 +116,12 @@ chrome.action.onClicked.addListener(async (tab) => {
   chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_WIDGET' });
 });
 
-// Alarm listener for Suno Polling
+// Alarm listener for Suno Polling and Config Sync
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'pollSuno') {
     await handleSunoPoll();
+  } else if (alarm.name === 'syncConfig') {
+    await syncRemoteConfig();
   }
 });
 

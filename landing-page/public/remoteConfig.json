@@ -1,0 +1,55 @@
+{
+  "selectors": {
+    "commentItem": [
+      "[data-e2e=\"comment-list\"] [data-e2e=\"comment-item\"]",
+      ".DivCommentItemWrapper",
+      "[class*=\"CommentItem\"]",
+      "[class*=\"comment-item\"]"
+    ],
+    "commentUsername": [
+      "[data-e2e=\"comment-username-1\"]",
+      "[class*=\"author\"]",
+      "[class*=\"Username\"]",
+      "[href*=\"/@\"]"
+    ],
+    "commentText": [
+      "[data-e2e=\"comment-display\"]",
+      "[data-e2e=\"comment-level-1\"]",
+      "[class*=\"CommentText\"]",
+      "[class*=\"comment-text\"]",
+      "[class*=\"CommentDisplay\"]",
+      "[class*=\"CommentContent\"]",
+      "p",
+      "span"
+    ],
+    "commentAvatar": [
+      "img[src*=\"tiktok\"]",
+      "img[src*=\"muscdn\"]",
+      "img[class*=\"avatar\"]",
+      "img[class*=\"Avatar\"]"
+    ],
+    "commentLikes": [
+      "[data-e2e=\"comment-like-count\"]",
+      "[class*=\"like\"]",
+      "[class*=\"Like\"]"
+    ],
+    "videoTitle": [
+      "[data-e2e=\"browse-video-desc\"]",
+      "[class*=\"DivVideoDesc\"]",
+      "[class*=\"video-desc\"]",
+      "h1[class*=\"Title\"]",
+      ".video-meta-title"
+    ],
+    "videoCreator": [
+      "[data-e2e=\"browse-username\"]",
+      "[data-e2e=\"video-author\"]",
+      "[class*=\"AuthorTitle\"]",
+      "[class*=\"author-uniqueid\"]",
+      "[class*=\"SpanUniqueId\"]"
+    ]
+  },
+  "config": {
+    "syncIntervalMinutes": 60,
+    "apiEndpoint": "http://localhost:5173/remoteConfig.json"
+  }
+}
