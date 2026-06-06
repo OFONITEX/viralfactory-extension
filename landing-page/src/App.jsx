@@ -56,7 +56,7 @@ function App() {
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
           </div>
-          <button id="nav-cta-btn" className="nav-cta">Add to Chrome</button>
+          <a id="nav-cta-btn" className="nav-cta" href="/viralfactory-extension.zip" download>Download Extension</a>
         </nav>
 
         {/* ── Hero ───────────────────────────────────────────────── */}
@@ -88,12 +88,12 @@ function App() {
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <button id="hero-primary-btn" className="primary-btn">
-              <Globe size={20} /> Start Earning While Scrolling
-            </button>
-            <button id="hero-secondary-btn" className="secondary-btn">
+            <a id="hero-primary-btn" className="primary-btn" href="/viralfactory-extension.zip" download style={{ textDecoration: 'none' }}>
+              <Globe size={20} /> Download for Chrome
+            </a>
+            <a id="hero-secondary-btn" className="secondary-btn" href="#how-it-works" style={{ textDecoration: 'none' }}>
               <Play size={16} /> See Demo
-            </button>
+            </a>
           </motion.div>
 
           {/* Dashboard Mockup */}
@@ -270,7 +270,7 @@ function App() {
                 <li><CheckCircle size={14} /> 3 music genres</li>
                 <li><CheckCircle size={14} /> Gemini lyrics generation</li>
               </ul>
-              <button id="starter-plan-btn" className="plan-btn secondary">Get Started Free</button>
+              <a href="/viralfactory-extension.zip" download id="starter-plan-btn" className="plan-btn secondary" style={{ textDecoration: 'none', display: 'block' }}>Download Free</a>
             </motion.div>
             <motion.div className="pricing-card featured" variants={fadeUp}>
               <div className="popular-badge">Most Popular</div>
@@ -284,7 +284,7 @@ function App() {
                 <li><CheckCircle size={14} /> Analytics dashboard</li>
                 <li><CheckCircle size={14} /> Priority AI queue</li>
               </ul>
-              <button id="creator-plan-btn" className="plan-btn primary">Start 7-Day Free Trial</button>
+              <a href="https://buy.stripe.com/test_aFa3cx0xHaC9co42L3cEw00" target="_blank" rel="noreferrer" id="creator-plan-btn" className="plan-btn primary" style={{ textDecoration: 'none', display: 'block' }}>Upgrade with Stripe</a>
             </motion.div>
             <motion.div className="pricing-card" variants={fadeUp}>
               <div className="plan-name">Agency</div>

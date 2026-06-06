@@ -221,6 +221,7 @@
       creator,
       url: window.location.href,
       videoSrc: videoEl?.src || null,
+      poster: videoEl?.poster || document.querySelector('meta[property="og:image"]')?.content || null,
     };
   }
 

@@ -1159,9 +1159,21 @@ function drawVideoPreview(animated = false) {
   ctx.clearRect(0, 0, W, H);
 
   // 1. Draw TikTok Background Video Frame if ready
-  const videoEl = document.getElementById('sunoVideoPlayer');
-  if (videoEl && videoEl.readyState >= 2) {
-    ctx.drawImage(videoEl, 0, 0, W, H);
+  if (state.thumbnailImg) {
+    // Draw the thumbnail image covering the canvas (object-fit: cover behavior)
+    const imgRatio = state.thumbnailImg.width / state.thumbnailImg.height;
+    const canvasRatio = W / H;
+    let drawW = W, drawH = H, offsetX = 0, offsetY = 0;
+    
+    if (imgRatio > canvasRatio) {
+      drawW = H * imgRatio;
+      offsetX = (W - drawW) / 2;
+    } else {
+      drawH = W / imgRatio;
+      offsetY = (H - drawH) / 2;
+    }
+    
+    ctx.drawImage(state.thumbnailImg, offsetX, offsetY, drawW, drawH);
     
     // Low opacity tint for premium styling & high-contrast text readability
     ctx.fillStyle = 'rgba(12, 12, 18, 0.45)';
@@ -1286,10 +1298,11 @@ function roundRect(ctx, x, y, w, h, r) {
 
 // ─── CAPTION GENERATOR ─────────────────────────────────────────────────────
 function generateCaption() {
-  const creator = state.videoMeta?.creator || 'a creator';
+  const creator = state.videoMeta?.creator || '@creator';
+  const title = state.videoMeta?.title ? `"${state.videoMeta.title}"` : '';
   const genre = state.selectedGenre || 'pop-punk';
   const tags = '#ViralFactory #AIMusic #TikTok #Funny #FYP #MusicVideo';
-  state.caption = `I turned ${creator}'s comment section into a ${genre} banger 🎵💀\n\nMade with ViralFactory — drop your fav TikTok link below 👇\n\n${tags}`;
+  state.caption = `I turned ${creator}'s comment section into a ${genre} banger 🎵💀\n\nOriginal video by ${creator}: ${title}\n\nMade with ViralFactory — drop your fav TikTok link below 👇\n\n${tags}`;
   
   const el = document.getElementById('captionText');
   if (el) {
@@ -1536,76 +1549,25 @@ This clip got passed around like it could quench a thirst`,
 }
 
 async function prepareTikTokBackgroundVideo() {
-  if (!state.videoMeta || !state.videoMeta.videoSrc) {
-    console.warn('No TikTok video source found in metadata.');
-    return;
-  }
-
-  // TikTok blob: URLs are scoped to their service worker and often inaccessible
-  // from injected script contexts. Skip gracefully if it looks like a blob URL.
-  const src = state.videoMeta.videoSrc;
-  if (!src || src.startsWith('blob:')) {
-    console.warn('TikTok video source is a blob URL (service worker scoped) — skipping prefetch, using static canvas.');
+  if (!state.videoMeta || !state.videoMeta.poster) {
+    console.warn('No TikTok poster found in metadata.');
     drawVideoPreview();
     return;
   }
 
-  try {
-    console.log('Attempting to prefetch background video via MAIN world...', src);
-    
-    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    if (!tab) {
-      console.warn('No active tab found to download video.');
-      drawVideoPreview();
-      return;
-    }
-
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      world: 'MAIN',
-      func: async (videoSrc) => {
-        try {
-          const res = await fetch(videoSrc, { mode: 'cors' });
-          if (!res.ok) return null;
-          const blob = await res.blob();
-          return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(blob);
-          });
-        } catch (e) {
-          return null;
-        }
-      },
-      args: [src]
-    }, (results) => {
-      if (chrome.runtime.lastError || !results?.[0]?.result) {
-        console.warn('Background video unavailable — using static canvas preview.');
-        drawVideoPreview();
-        return;
-      }
-
-      const base64 = results[0].result;
-      console.log('Background video packaged successfully!');
-      state.videoUrl = base64;
-
-      const videoPlayer = document.getElementById('sunoVideoPlayer');
-      if (videoPlayer) {
-        videoPlayer.src = state.videoUrl;
-        videoPlayer.muted = true;
-        videoPlayer.loop = true;
-        videoPlayer.playsInline = true;
-        videoPlayer.onloadeddata = () => {
-          videoPlayer.play().then(() => startRenderLoop()).catch(() => drawVideoPreview());
-        };
-        videoPlayer.load();
-      }
-    });
-  } catch (err) {
-    console.warn('Video prefetch error — falling back to static preview:', err.message);
+  console.log('Loading TikTok video thumbnail for background...');
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    state.thumbnailImg = img;
     drawVideoPreview();
-  }
+    console.log('Thumbnail loaded successfully!');
+  };
+  img.onerror = () => {
+    console.warn('Failed to load video thumbnail poster.');
+    drawVideoPreview();
+  };
+  img.src = state.videoMeta.poster;
 }
 
 // ─── VIDEO DOWNLOADER & RECORDER ───────────────────────────────────────────
@@ -1616,18 +1578,13 @@ let sourceNode = null;
 let destNode = null;
 
 function getAudioStream(audioEl) {
-  // Always create a fresh context per recording session to handle new blob URLs
-  if (audioCtx) {
-    try { audioCtx.close(); } catch (e) {}
-    audioCtx = null;
-    sourceNode = null;
-    destNode = null;
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    sourceNode = audioCtx.createMediaElementSource(audioEl);
+    destNode = audioCtx.createMediaStreamDestination();
+    sourceNode.connect(destNode);
+    sourceNode.connect(audioCtx.destination);
   }
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  sourceNode = audioCtx.createMediaElementSource(audioEl);
-  destNode = audioCtx.createMediaStreamDestination();
-  sourceNode.connect(destNode);
-  sourceNode.connect(audioCtx.destination);
   return destNode.stream;
 }
 
@@ -1758,12 +1715,22 @@ function setupVideoDownloader() {
       // Start recording
       mediaRecorder.start();
       
+      let animationFrameId;
+      const renderLoop = () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          drawVideoPreview(true);
+          animationFrameId = requestAnimationFrame(renderLoop);
+        }
+      };
+      
       // Play audio/video sync
       audioEl.play().catch(e => console.log('Audio playback deferred:', e));
       if (videoPlayer) {
         videoPlayer.muted = true;
         videoPlayer.play().catch(e => console.log('Video playback deferred:', e));
       }
+      
+      renderLoop(); // Start the loop
 
       // Update button text to allow stopping
       downloadBtn.innerHTML = '⏹️ Recording Video (Click to Stop & Save)';
@@ -1773,6 +1740,7 @@ function setupVideoDownloader() {
       audioEl.onended = () => {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
           console.log('Recording finished automatically (audio ended).');
+          cancelAnimationFrame(animationFrameId);
           mediaRecorder.stop();
         }
       };
