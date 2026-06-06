@@ -512,8 +512,8 @@ function setupSettingsPanel() {
   document.getElementById('closeSettings').onclick = () => {
     document.getElementById('settingsPanel').classList.add('hidden');
   };
-  document.getElementById('saveSettings').onclick = saveKeys;
-  document.getElementById('resetSessionBtn').onclick = resetSession;
+  if(document.getElementById('saveSettings')) document.getElementById('saveSettings').onclick = saveKeys;
+  if(document.getElementById('resetSessionBtn')) document.getElementById('resetSessionBtn').onclick = resetSession;
 }
 
 function saveKeys() {
