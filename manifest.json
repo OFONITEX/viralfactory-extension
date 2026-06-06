@@ -25,7 +25,8 @@
     "*://*.byteoversea.com/*",
     "*://*.ibyteimg.com/*",
     "*://*.aiquickdraw.com/*",
-    "https://viralfactory.wizprinze212.workers.dev/*",`n    "https://pescssnflhgodwrdacja.supabase.co/*"
+    "https://viralfactory.wizprinze212.workers.dev/*",
+    "https://pescssnflhgodwrdacja.supabase.co/*"
   ],
   "action": {
     "default_icon": {
