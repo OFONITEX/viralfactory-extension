@@ -56,7 +56,7 @@ function App() {
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
           </div>
-          <a id="nav-cta-btn" className="nav-cta" href="/viralfactory-extension.zip" download>Download Extension</a>
+          <a id="nav-cta-btn" className="nav-cta" href="https://chrome.google.com/webstore/detail/viralfactory-extension/d3b03b09-16c8-454b-9c51-30de52481293" target="_blank" rel="noopener noreferrer">Add to Chrome</a>
         </nav>
 
         {/* ── Hero ───────────────────────────────────────────────── */}
@@ -88,8 +88,8 @@ function App() {
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <a id="hero-primary-btn" className="primary-btn" href="/viralfactory-extension.zip" download style={{ textDecoration: 'none' }}>
-              <Globe size={20} /> Download for Chrome
+            <a id="hero-primary-btn" className="primary-btn" href="https://chrome.google.com/webstore/detail/viralfactory-extension/d3b03b09-16c8-454b-9c51-30de52481293" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <Globe size={20} /> Add to Chrome
             </a>
             <a id="hero-secondary-btn" className="secondary-btn" href="#how-it-works" style={{ textDecoration: 'none' }}>
               <Play size={16} /> See Demo
@@ -270,7 +270,7 @@ function App() {
                 <li><CheckCircle size={14} /> 3 music genres</li>
                 <li><CheckCircle size={14} /> Gemini lyrics generation</li>
               </ul>
-              <a href="/viralfactory-extension.zip" download id="starter-plan-btn" className="plan-btn secondary" style={{ textDecoration: 'none', display: 'block' }}>Download Free</a>
+              <a href="https://chrome.google.com/webstore/detail/viralfactory-extension/d3b03b09-16c8-454b-9c51-30de52481293" target="_blank" rel="noopener noreferrer" id="starter-plan-btn" className="plan-btn secondary" style={{ textDecoration: 'none', display: 'block' }}>Add to Chrome</a>
             </motion.div>
             <motion.div className="pricing-card featured" variants={fadeUp}>
               <div className="popular-badge">Most Popular</div>

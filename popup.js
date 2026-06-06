@@ -360,97 +360,131 @@ async function resetSession() {
   }
 }
 
-// ─── AUTHENTICATION GATING & SIGN-UP ────────────────────────────────────────
+// --- SUPABASE CONFIG ---
+const SUPABASE_URL = 'https://pescssnflhgodwrdacja.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_UD46OHsij9Q-O4nbnGqEOg_rCkM-Yak';
+
+async function supabaseSignUp(name, email, password) {
+  const res = await fetch(${SUPABASE_URL}/auth/v1/signup, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+    body: JSON.stringify({ email, password, data: { full_name: name } })
+  });
+  return res.json();
+}
+
+async function supabaseSignIn(email, password) {
+  const res = await fetch(${SUPABASE_URL}/auth/v1/token?grant_type=password, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+    body: JSON.stringify({ email, password })
+  });
+  return res.json();
+}
+
+async function supabaseSignOut(accessToken) {
+  await fetch(${SUPABASE_URL}/auth/v1/logout, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': Bearer  }
+  }).catch(() => {});
+}
+
+// --- AUTHENTICATION GATING & SIGN-UP ---
 function setupAuth() {
   const modal = document.getElementById('signupModal');
   const closeBtn = document.getElementById('closeSignup');
-  const submitBtn = document.getElementById('submitSignup');
+  const submitSignUpBtn = document.getElementById('submitSignup');
+  const submitSignInBtn = document.getElementById('submitSignIn');
   const openSignupBtn = document.getElementById('openSignupBtn');
   const signOutBtn = document.getElementById('signOutBtn');
+  const switchToSignIn = document.getElementById('switchToSignIn');
+  const switchToSignUp = document.getElementById('switchToSignUp');
 
-  // Load user from storage
-  chrome.storage.local.get('vf_user', ({ vf_user }) => {
-    if (vf_user) {
-      state.user = vf_user;
-      updateAuthUI(true);
-    } else {
-      state.user = null;
-      updateAuthUI(false);
-    }
+  chrome.storage.local.get('vf_session', ({ vf_session }) => {
+    if (vf_session && vf_session.access_token) { state.user = vf_session; updateAuthUI(true); }
+    else { state.user = null; updateAuthUI(false); }
   });
 
-  // Modal wire-up
-  if (closeBtn) {
-    closeBtn.onclick = () => {
-      modal.classList.add('hidden');
-      state.signupCallback = null;
-    };
-  }
+  if (switchToSignIn) switchToSignIn.onclick = (e) => {
+    e.preventDefault();
+    document.getElementById('authSignUpFields').classList.add('hidden');
+    document.getElementById('authSignInFields').classList.remove('hidden');
+    document.getElementById('authModalTitle').textContent = 'Welcome Back';
+    document.getElementById('authError').classList.add('hidden');
+  };
+  if (switchToSignUp) switchToSignUp.onclick = (e) => {
+    e.preventDefault();
+    document.getElementById('authSignInFields').classList.add('hidden');
+    document.getElementById('authSignUpFields').classList.remove('hidden');
+    document.getElementById('authModalTitle').textContent = 'Unlock ViralFactory';
+    document.getElementById('authError').classList.add('hidden');
+  };
 
-  if (openSignupBtn) {
-    openSignupBtn.onclick = () => {
-      document.getElementById('settingsPanel').classList.add('hidden');
-      modal.classList.remove('hidden');
-    };
-  }
+  if (closeBtn) closeBtn.onclick = () => { modal.classList.add('hidden'); state.signupCallback = null; };
+  if (openSignupBtn) openSignupBtn.onclick = () => { document.getElementById('settingsPanel').classList.add('hidden'); modal.classList.remove('hidden'); };
 
-  if (signOutBtn) {
-    signOutBtn.onclick = () => {
-      chrome.storage.local.remove('vf_user', () => {
-        state.user = null;
-        updateAuthUI(false);
-        saveSession();
+  if (signOutBtn) signOutBtn.onclick = async () => {
+    if (state.user && state.user.access_token) await supabaseSignOut(state.user.access_token);
+    chrome.storage.local.remove('vf_session', () => { state.user = null; updateAuthUI(false); saveSession(); });
+  };
+
+  if (submitSignUpBtn) submitSignUpBtn.onclick = async () => {
+    const name = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
+    if (!email || !password) { showAuthError('Please fill in all fields.'); return; }
+    if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+    submitSignUpBtn.textContent = 'Creating account...'; submitSignUpBtn.disabled = true;
+    try {
+      const data = await supabaseSignUp(name, email, password);
+      if (data.error) { showAuthError(data.error.message || data.error); return; }
+      const session = data.session || {}; const user = data.user || {};
+      const stored = { access_token: session.access_token, refresh_token: session.refresh_token, email: user.email, id: user.id, plan: 'free' };
+      chrome.storage.local.set({ vf_session: stored }, () => {
+        state.user = stored; updateAuthUI(true); modal.classList.add('hidden');
+        if (state.signupCallback) { const cb = state.signupCallback; state.signupCallback = null; cb(); }
       });
-    };
-  }
+    } catch(e) { showAuthError('Network error. Please try again.'); }
+    submitSignUpBtn.textContent = 'Create Account & Unlock'; submitSignUpBtn.disabled = false;
+  };
 
-  if (submitBtn) {
-    submitBtn.onclick = () => {
-      const name = document.getElementById('signupName').value.trim();
-      const email = document.getElementById('signupEmail').value.trim();
-
-      if (!email) {
-        alert('Please provide a valid email address.');
-        return;
-      }
-
-      const user = { name, email, createdAt: new Date().toISOString() };
-      chrome.storage.local.set({ vf_user: user }, () => {
-        state.user = user;
-        updateAuthUI(true);
-        modal.classList.add('hidden');
-
-        // Execute pending action if any
-        if (state.signupCallback) {
-          const cb = state.signupCallback;
-          state.signupCallback = null;
-          cb();
-        }
+  if (submitSignInBtn) submitSignInBtn.onclick = async () => {
+    const email = document.getElementById('signinEmail').value.trim();
+    const password = document.getElementById('signinPassword').value;
+    if (!email || !password) { showAuthError('Please enter your email and password.'); return; }
+    submitSignInBtn.textContent = 'Signing in...'; submitSignInBtn.disabled = true;
+    try {
+      const data = await supabaseSignIn(email, password);
+      if (data.error || !data.access_token) { showAuthError(data.error_description || 'Invalid email or password.'); submitSignInBtn.textContent = 'Sign In'; submitSignInBtn.disabled = false; return; }
+      const stored = { access_token: data.access_token, refresh_token: data.refresh_token, email: data.user.email, id: data.user.id, plan: data.user.user_metadata?.plan || 'free' };
+      chrome.storage.local.set({ vf_session: stored }, () => {
+        state.user = stored; updateAuthUI(true); modal.classList.add('hidden');
+        if (state.signupCallback) { const cb = state.signupCallback; state.signupCallback = null; cb(); }
       });
-    };
-  }
+    } catch(e) { showAuthError('Network error. Please try again.'); }
+    submitSignInBtn.textContent = 'Sign In'; submitSignInBtn.disabled = false;
+  };
 
-  // Preferences (Auto-open panel on TikTok videos)
   const autoOpenPref = document.getElementById('autoOpenPref');
   if (autoOpenPref) {
-    chrome.storage.local.get('vf_auto_open_disabled', (data) => {
-      autoOpenPref.checked = !data.vf_auto_open_disabled;
-    });
-    autoOpenPref.onchange = () => {
-      chrome.storage.local.set({ vf_auto_open_disabled: !autoOpenPref.checked });
-    };
+    chrome.storage.local.get('vf_auto_open_disabled', (data) => { autoOpenPref.checked = !data.vf_auto_open_disabled; });
+    autoOpenPref.onchange = () => { chrome.storage.local.set({ vf_auto_open_disabled: !autoOpenPref.checked }); };
   }
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  if (el) { el.textContent = msg; el.classList.remove('hidden'); }
 }
 
 function updateAuthUI(isAuthenticated) {
   const infoSection = document.getElementById('accountInfoSection');
   const promptSection = document.getElementById('accountRegisterPrompt');
   const emailText = document.getElementById('userEmailText');
-
   if (isAuthenticated && state.user) {
     if (infoSection) infoSection.classList.remove('hidden');
     if (promptSection) promptSection.classList.add('hidden');
-    if (emailText) emailText.textContent = `Signed in as: ${state.user.email}`;
+    if (emailText) emailText.textContent = Signed in as: ;
   } else {
     if (infoSection) infoSection.classList.add('hidden');
     if (promptSection) promptSection.classList.remove('hidden');
@@ -458,12 +492,13 @@ function updateAuthUI(isAuthenticated) {
 }
 
 function checkAuth(callback) {
-  if (state.user) {
-    callback();
-  } else {
+  if (state.user) { callback(); }
+  else {
     const modal = document.getElementById('signupModal');
     if (modal) {
       modal.classList.remove('hidden');
+      document.getElementById('authSignInFields')?.classList.add('hidden');
+      document.getElementById('authSignUpFields')?.classList.remove('hidden');
       state.signupCallback = callback;
     }
   }
