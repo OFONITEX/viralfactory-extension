@@ -16,11 +16,12 @@
       <div class="logo-icon">🎵</div>
       <span class="logo-text">ViralFactory</span>
     </div>
-    <button class="settings-btn" id="settingsBtn" title="API Keys & Settings">
+    <div style="display:flex;gap:6px;align-items:center;"><a id="upgradeHeaderBtn" href="https://buy.stripe.com/test_aFa3cx0xHaC9co42L3cEw00" target="_blank" rel="noreferrer" style="background:linear-gradient(135deg,#FF3366,#9B5DE5);color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;text-decoration:none;letter-spacing:0.5px;white-space:nowrap;">&#9889; Upgrade</a><button class="settings-btn" id="settingsBtn" title="API Keys &amp; Settings">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
       </svg>
     </button>
+    </div>
   </header>
 
   <!-- SETTINGS PANEL (overlay) -->
@@ -62,6 +63,34 @@
       <button class="btn-save" id="saveSettings">Save Keys 🔒</button>
       <button class="btn-sub" id="resetSessionBtn" style="margin-top:8px;background:rgba(255,51,102,0.15);border-color:rgba(255,51,102,0.3);color:var(--pink)">Reset Session 🗑️</button>
       <div class="save-confirm hidden" id="saveConfirm">✓ Saved to local storage</div>
+      
+      <div class="field-divider" style="margin-top:12px;">Account</div>
+      <div id="accountInfoSection" class="hidden">
+        <div class="field-group" style="margin-bottom: 0;">
+          <span class="field-hint" style="color:var(--text);font-size:12px;margin-bottom:6px;" id="userEmailText">Signed in as: user@example.com</span>
+          <button class="btn-sub" id="signOutBtn" style="background:rgba(255,255,255,0.06);margin-top:0;">Sign Out 🚪</button>
+        </div>
+      </div>
+      <div id="accountRegisterPrompt" class="field-group" style="margin-bottom: 0;">
+        <span class="field-hint" style="color:var(--muted);font-size:11px;">Not signed in. Downloads and publishing are locked.</span>
+        <button class="btn-sub" id="openSignupBtn" style="background:var(--pink-glow);border-color:var(--pink);color:var(--pink);margin-top:6px;">Sign Up Now 🚀</button>
+      </div>
+
+      <!-- Upgrade CTA Banner -->
+      <div style="margin-top:14px;background:linear-gradient(135deg,rgba(255,51,102,0.12),rgba(155,93,229,0.12));border:1px solid rgba(155,93,229,0.3);border-radius:10px;padding:12px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;color:#c4b0f0;letter-spacing:0.5px;margin-bottom:4px;">⚡ CREATOR PLAN — $19/mo</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Unlimited posts · All genres · Suno AI · Analytics</div>
+        <a href="https://buy.stripe.com/test_aFa3cx0xHaC9co42L3cEw00" target="_blank" rel="noreferrer" style="display:block;background:linear-gradient(135deg,#FF3366,#9B5DE5);color:#fff;font-size:11px;font-weight:700;padding:8px;border-radius:8px;text-decoration:none;letter-spacing:0.5px;">Upgrade Now → Stripe</a>
+      </div>
+
+      <div class="field-divider" style="margin-top:12px;">Preferences</div>
+      <div class="toggle-row" style="margin-top:6px;margin-bottom:0;">
+        <label class="toggle-label" style="font-size: 11px;">
+          <input type="checkbox" id="autoOpenPref" checked>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          Auto-open panel on TikTok videos
+        </label>
+      </div>
     </div>
   </div>
 
@@ -338,6 +367,30 @@
     </div>
 
   </main>
+
+  <!-- SIGN UP MODAL -->
+  <div class="signup-modal hidden" id="signupModal">
+    <div class="signup-container">
+      <button class="signup-close-btn" id="closeSignup">✕</button>
+      <div class="signup-logo">🎵</div>
+      <h2>Unlock ViralFactory</h2>
+      <p>Create a free account to download your generated videos, publish to socials, and get 10 free API credits!</p>
+      
+      <div class="signup-form">
+        <div class="field-group" style="text-align: left;">
+          <label class="field-label" for="signupName">Full Name</label>
+          <input type="text" class="field-input" id="signupName" placeholder="e.g. John Doe">
+        </div>
+        <div class="field-group" style="text-align: left;">
+          <label class="field-label" for="signupEmail">Email Address</label>
+          <input type="email" class="field-input" id="signupEmail" placeholder="you@example.com" required>
+        </div>
+        <button class="btn-main" id="submitSignup" style="margin-top: 10px; margin-bottom: 0;">
+          Create Account & Unlock 🚀
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script src="popup.js"></script>
 </body>

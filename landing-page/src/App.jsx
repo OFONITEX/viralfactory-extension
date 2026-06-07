@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { Play, TrendingUp, Zap, DollarSign, Globe, Sparkles, CheckCircle, Star } from 'lucide-react'
 import './index.css'
+import WarpingImage from './WarpingImage'
 
 // Animated counter hook
 function useCounter(target, duration = 2000) {
@@ -163,24 +164,136 @@ function App() {
             <motion.p className="section-sub" variants={fadeUp}>Go from doom-scrolling to building a lucrative brand asset.</motion.p>
           </motion.div>
 
-          <div className="steps-grid">
+          {/* Single unified box containing all 4 steps */}
+          <motion.div
+            className="steps-box"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             {[
-              { n:'01', emoji:'🍿', title:'Install & Chill', desc:'Add ViralFactory to Chrome. Open TikTok. That\'s the hardest step — we promise.' },
-              { n:'02', emoji:'🤖', title:'AI Background Magic', desc:'As you scroll, Gemini reads the viral comments. It writes lyrics, Suno AI generates a full song, and our engine renders the video.' },
-              { n:'03', emoji:'📤', title:'Auto-Published', desc:'Your brand-new piece of content is posted across TikTok, YouTube Shorts, and Instagram Reels. Completely automatically.' },
-              { n:'04', emoji:'💸', title:'Brand & Revenue Grow', desc:'Platform algorithms push your content. You gain followers, views, and creator revenue — for zero extra effort.' },
-            ].map(s => (
+              { 
+                n: '01', 
+                title: 'Install & Chill', 
+                desc: 'Add ViralFactory to Chrome. Open TikTok. That\'s the hardest step — we promise.',
+                color: 'var(--purple)',
+                illustration: (
+                  <svg viewBox="0 0 120 120" width="100%" height="100%">
+                    <rect x="15" y="25" width="90" height="70" rx="6" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2" />
+                    <line x1="15" y1="42" x2="105" y2="42" className="browser-bar" strokeWidth="1.5" />
+                    <circle cx="23" cy="33" r="2.5" fill="rgba(255,255,255,0.15)" />
+                    <circle cx="31" cy="33" r="2.5" fill="rgba(255,255,255,0.15)" />
+                    <circle cx="39" cy="33" r="2.5" fill="rgba(255,255,255,0.15)" />
+                    <path d="M 64.5 49 C 64.5 46.5 62.5 44.5 60 44.5 C 57.5 44.5 55.5 46.5 55.5 49 L 52 49 L 52 52.5 C 54.5 52.5 56.5 54.5 56.5 57 C 56.5 59.5 54.5 61.5 52 61.5 L 52 65 L 55.5 65 L 55.5 64.5 C 55.5 62 57.5 60 60 60 C 62.5 60 64.5 62 64.5 64.5 L 64.5 65 L 68 65 L 68 61.5 L 67.5 61.5 C 65 61.5 63 59.5 63 57 C 63 54.5 65 52.5 67.5 52.5 L 68 52.5 L 68 49 Z" fill="rgba(255,255,255,0.2)" className="puzzle-icon-glowing" />
+                    <g className="click-cursor">
+                      <path d="M 75 75 L 62 67 L 66 65 L 69 69 L 71 68 L 68 64 L 70 63 L 75 75 Z" fill="#fff" stroke="#060608" strokeWidth="1.5" />
+                    </g>
+                  </svg>
+                )
+              },
+              { 
+                n: '02', 
+                title: 'AI Background Magic', 
+                desc: 'As you scroll, Gemini reads the viral comments. It writes lyrics, Suno AI generates a full song, and our engine renders the video.',
+                color: '#00E5FF',
+                illustration: (
+                  <svg viewBox="0 0 120 120" width="100%" height="100%">
+                    <g className="comment-bubble-line comment-bubble-line-1">
+                      <rect x="20" y="25" width="60" height="18" rx="5" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" />
+                      <circle cx="28" cy="34" r="4" fill="var(--purple)" opacity="0.4" />
+                      <line x1="36" y1="31" x2="72" y2="31" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="36" y1="37" x2="60" y2="37" stroke="rgba(255,255,255,0.1)" strokeWidth="2" strokeLinecap="round" />
+                    </g>
+                    <g className="comment-bubble-line comment-bubble-line-2">
+                      <rect x="40" y="50" width="60" height="18" rx="5" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.06)" />
+                      <circle cx="48" cy="59" r="4" fill="var(--green)" opacity="0.4" />
+                      <line x1="56" y1="56" x2="92" y2="56" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="56" y1="62" x2="80" y2="62" stroke="rgba(255,255,255,0.1)" strokeWidth="2" strokeLinecap="round" />
+                    </g>
+                    <line x1="10" y1="45" x2="110" y2="45" stroke="var(--purple)" strokeWidth="2" className="scanning-line" style={{ filter: 'drop-shadow(0 0 4px var(--purple))' }} />
+                    <path d="M 35 30 A 2 2 0 0 1 37 32 L 37 38 A 3 3 0 1 1 34 41 L 34 32 Z" fill="var(--purple)" className="music-note-sparkle music-note-sparkle-1" />
+                    <path d="M 85 45 A 2 2 0 0 1 87 47 L 87 53 A 3 3 0 1 1 84 56 L 84 47 Z" fill="var(--green)" className="music-note-sparkle music-note-sparkle-2" />
+                  </svg>
+                )
+              },
+              { 
+                n: '03', 
+                title: 'Auto-Published', 
+                desc: 'Your brand-new piece of content is posted across TikTok, YouTube Shorts, and Instagram Reels. Completely automatically.',
+                color: '#FF3366',
+                illustration: (
+                  <svg viewBox="0 0 120 120" width="100%" height="100%">
+                    <circle cx="60" cy="60" r="36" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1.5" className="orbit-ring" />
+                    <g className="paper-plane">
+                      <path d="M 45 68 L 75 52 L 64 61 L 58 72 Z" fill="rgba(255,255,255,0.15)" stroke="var(--purple)" strokeWidth="1.5" />
+                      <path d="M 64 61 L 45 68 L 52 59 Z" fill="rgba(255,255,255,0.25)" stroke="var(--purple)" strokeWidth="1" />
+                    </g>
+                    <g className="orbit-icon-circle orbit-icon-circle-tt">
+                      <circle cx="60" cy="60" r="8" fill="#060608" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                      <path d="M 59 57 L 61 57 L 61 61" stroke="#00E5FF" strokeWidth="1.5" fill="none" />
+                      <circle cx="59" cy="61" r="1" fill="#00E5FF" />
+                    </g>
+                    <g className="orbit-icon-circle orbit-icon-circle-yt">
+                      <circle cx="60" cy="60" r="8" fill="#060608" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                      <polygon points="58,57 63,60 58,63" fill="#FF3366" />
+                    </g>
+                    <g className="orbit-icon-circle orbit-icon-circle-ig">
+                      <circle cx="60" cy="60" r="8" fill="#060608" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                      <rect x="57" y="57" width="6" height="6" rx="1.5" fill="none" stroke="var(--purple)" strokeWidth="1.5" />
+                    </g>
+                  </svg>
+                )
+              },
+              { 
+                n: '04', 
+                title: 'Brand & Revenue Grow', 
+                desc: 'Platform algorithms push your content. You gain followers, views, and creator revenue — for zero extra effort.',
+                color: 'var(--green)',
+                illustration: (
+                  <svg viewBox="0 0 120 120" width="100%" height="100%">
+                    <line x1="20" y1="20" x2="20" y2="100" className="grid-line" />
+                    <line x1="50" y1="20" x2="50" y2="100" className="grid-line" />
+                    <line x1="80" y1="20" x2="80" y2="100" className="grid-line" />
+                    <line x1="20" y1="80" x2="100" y2="80" className="grid-line" />
+                    <line x1="20" y1="50" x2="100" y2="50" className="grid-line" />
+                    <path d="M 20 85 Q 40 75 55 50 T 90 25" fill="none" stroke="url(#chart-grad)" strokeWidth="3" strokeLinecap="round" className="chart-path" />
+                    <defs>
+                      <linearGradient id="chart-grad" x1="0" y1="1" x2="1" y2="0">
+                        <stop offset="0%" stopColor="var(--purple)" />
+                        <stop offset="100%" stopColor="var(--green)" />
+                      </linearGradient>
+                    </defs>
+                    <circle cx="90" cy="25" r="4.5" fill="var(--green)" className="chart-dot" />
+                    <text x="35" y="45" fill="var(--green)" fontSize="14" fontWeight="bold" className="floating-money floating-money-1">$</text>
+                    <text x="75" y="35" fill="var(--green)" fontSize="14" fontWeight="bold" className="floating-money floating-money-2">$</text>
+                  </svg>
+                )
+              }
+            ].map((s, i) => (
               <motion.div
-                key={s.n} className="step-card"
-                variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
+                key={s.n}
+                className="step-card"
+                initial={{ opacity: 0, y: 35 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: i * 2, ease: [0.25, 0.8, 0.25, 1] }}
               >
-                <div className="step-emoji">{s.emoji}</div>
-                <div className="step-num">{s.n}</div>
-                <h3>{s.title}</h3>
-                <p>{s.desc}</p>
+                {/* Left: number + content */}
+                <div className="step-content">
+                  <div className="step-header">
+                    <span className="step-num-badge" style={{ color: s.color, borderColor: `${s.color}44`, background: `${s.color}14` }}>{s.n}</span>
+                    <h3>{s.title}</h3>
+                  </div>
+                  <p>{s.desc}</p>
+                </div>
+                {/* Right: SVG */}
+                <div className="step-illustration" style={{ width: 150, height: 100, flexShrink: 0 }}>
+                  {s.illustration}
+                </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </section>
 
         {/* ── Features ───────────────────────────────────────────── */}
@@ -198,16 +311,41 @@ function App() {
             variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}
           >
             {[
-              { icon:<Play />,        title:'Zero Extra Work',        desc:'Never write a script or edit a video again. Content is conceptualized, created, and posted while you consume.' },
-              { icon:<TrendingUp />,  title:'Autopilot Branding',     desc:'Grow across TikTok, YouTube, and Instagram Reels simultaneously without lifting a finger.' },
-              { icon:<DollarSign />,  title:'Monetize Your Time',     desc:'Your doom-scrolling hours are now a lucrative asset. Watch views convert directly into creator revenue.' },
-              { icon:<Sparkles />,   title:'Gemini + Suno AI',       desc:'The world\'s best LLM writes the lyrics. Suno generates an actual full-length song. Real quality, not a gimmick.' },
-              { icon:<Zap />,        title:'Multiple Genres',         desc:'Hip-hop, Pop Punk, Country, Opera, Death Metal — the AI picks the funniest genre for each comment thread.' },
-              { icon:<CheckCircle />,title:'100% Client-Side',        desc:'No sketchy servers. Your API keys and data stay in your browser. Privacy first, always.' },
+              { icon:<Play />,        title:'Zero Extra Work',        img: '/zero-extra-work.jpg',        desc:'Never write a script or edit a video again. Content is conceptualized, created, and posted while you consume.' },
+              { icon:<TrendingUp />,  title:'Autopilot Branding',     img: '/autopilot-branding.jpg',     desc:'Grow across TikTok, YouTube, and Instagram Reels simultaneously without lifting a finger.' },
+              { icon:<DollarSign />,  title:'Monetize Your Time',     img: '/monetize-time.jpg',          desc:'Your doom-scrolling hours are now a lucrative asset. Watch views convert directly into creator revenue.' },
+              { icon:<Sparkles />,   title:'Gemini + Suno AI',       img: '/gemini-suno.jpg',            desc:'The world\'s best LLM writes the lyrics. Suno generates an actual full-length song. Real quality, not a gimmick.' },
+              { icon:<Zap />,        title:'Multiple Genres',         img: '/multiple-genres.jpg',        desc:'Hip-hop, Pop Punk, Country, Opera, Death Metal — the AI picks the funniest genre for each comment thread.' },
+              { icon:<CheckCircle />,title:'100% Client-Side',        img: '/client-side.jpg',            desc:'No sketchy servers. Your API keys and data stay in your browser. Privacy first, always.' },
             ].map(f => (
-              <motion.div key={f.title} className="feature-card" variants={fadeUp}>
+              <motion.div 
+                key={f.title} 
+                className="feature-card" 
+                variants={fadeUp}
+                whileHover={{ y: -8, scale: 1.03, borderColor: 'rgba(181, 56, 255, 0.4)', boxShadow: '0 20px 40px rgba(181, 56, 255, 0.12)' }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+                  e.currentTarget.style.setProperty('--x', `${x}px`);
+                  e.currentTarget.style.setProperty('--y', `${y}px`);
+                }}
+              >
                 <div className="feature-icon">{f.icon}</div>
                 <h3>{f.title}</h3>
+                
+                {f.img && (
+                  <div className="feature-image-wrapper">
+                    <WarpingImage 
+                      src={f.img} 
+                      alt={f.title} 
+                      className="feature-card-image"
+                    />
+                    <div className="feature-image-overlay-text">{f.title}</div>
+                  </div>
+                )}
+
                 <p>{f.desc}</p>
               </motion.div>
             ))}
@@ -232,7 +370,13 @@ function App() {
               { name:'@dankvibes99',  handle:'89K YouTube', quote:'"My YouTube Shorts channel went from dead to $400/month in passive revenue. I just watch TikTok. This is insane."', stars:5 },
               { name:'@lena.reels',   handle:'54K Reels',   quote:'"The AI actually makes hilarious songs. My audience thinks I spend hours editing. I spend zero hours."', stars:5 },
             ].map(t => (
-              <motion.div key={t.name} className="testimonial-card" variants={fadeUp}>
+              <motion.div 
+                key={t.name} 
+                className="testimonial-card" 
+                variants={fadeUp}
+                whileHover={{ y: -6, scale: 1.02, borderColor: 'rgba(0, 255, 136, 0.4)', boxShadow: '0 20px 40px rgba(0, 255, 136, 0.08)' }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
                 <div className="stars">{Array(t.stars).fill(0).map((_, i) => <Star key={i} size={14} fill="#f59e0b" color="#f59e0b" />)}</div>
                 <p className="quote">"{t.quote}"</p>
                 <div className="reviewer">
