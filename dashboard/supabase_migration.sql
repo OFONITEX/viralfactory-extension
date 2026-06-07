@@ -31,10 +31,12 @@ create trigger on_auth_user_created
 -- 3. Row-Level Security (users can only read their own row)
 alter table public.profiles enable row level security;
 
+drop policy if exists "Users can read own profile" on public.profiles;
 create policy "Users can read own profile"
   on public.profiles for select
   using (auth.uid() = id);
 
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
   on public.profiles for update
   using (auth.uid() = id);
@@ -78,15 +80,18 @@ values (
 alter table public.remote_config enable row level security;
 
 -- Allow public read access (for the extension to fetch the config via anon key)
+drop policy if exists "Public read access to config" on public.remote_config;
 create policy "Public read access to config"
   on public.remote_config for select
   using (true);
 
 -- Allow authenticated users to update (The dashboard UI will use the logged-in admin user to save this)
+drop policy if exists "Authenticated users can update config" on public.remote_config;
 create policy "Authenticated users can update config"
   on public.remote_config for update
   using (auth.role() = 'authenticated');
   
+drop policy if exists "Authenticated users can insert config" on public.remote_config;
 create policy "Authenticated users can insert config"
   on public.remote_config for insert
   with check (auth.role() = 'authenticated');
