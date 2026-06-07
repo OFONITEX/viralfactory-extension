@@ -88,3 +88,24 @@ Or use any emoji-to-PNG converter online.
 ## License
 
 MIT — build on top of this, ship it, make money, give us credit 🙏
+
+## Recent Enhancements & Modifications
+
+We recently completed a comprehensive overhaul of both the Chrome extension (to resolve core bugs and security warnings) and the landing page UI (for a premium, high-converting aesthetic).
+
+### 🛠️ Chrome Extension Fixes
+* **CORS & Audio Fetching:** Rewrote asset loading to proxy audio fetches through the background service worker (`background.js`), bypassing security context blocks.
+* **TikTok Scraping:** Patched the content script DOM parsing logic (`content.js`) to target updated TikTok layout nodes, recovering video metadata, user comments, and creator avatars dynamically.
+* **Video Recording stability:** Resolved canvas recording buffer crashes in `popup.js` by transitioning to a unified blob stream pipeline using `MediaRecorder` with fixed standard encoding profiles.
+
+### 🎨 Premium Landing Page UI Overhaul
+* **The Effortless Loop (Process Timeline):**
+  * Consolidated the 4 process steps into a unified glassmorphic container panel.
+  * Designed sequential staggered entries utilizing Framer Motion: steps glide up sequentially from the bottom at 2-second intervals when scrolled into view.
+  * Replaced grid layouts with wide horizontal rows (numbered badge + copy left, interactive animated SVG right).
+* **WebGL Image Hover Warp Shaders:**
+  * Implemented a custom high-performance React component (`WarpingImage.jsx`) running raw vanilla WebGL shaders.
+  * When hovered, images undergo a coordinate-warping liquid ripple and center-grid pinch distortion, accompanied by chromatic aberration.
+* **Glassmorphic frosted-glass Title Overlays:**
+  * Embedded descriptive titles on top of the images.
+  * Labels react dynamically to hovering with scale swelling (`scale(1.06)`) and glowing purple backlight shifts.
